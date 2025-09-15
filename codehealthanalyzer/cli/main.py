@@ -290,6 +290,41 @@ def info(project_path: str):
     click.echo(f"📊 Total de arquivos: {project_info['total_files']}")
 
 
+@cli.command()
+@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True), default='.')
+@click.option('--host', '-h', default='127.0.0.1', help='Host do servidor (padrão: 127.0.0.1)')
+@click.option('--port', '-p', default=8000, type=int, help='Porta do servidor (padrão: 8000)')
+@click.option('--reload', is_flag=True, help='Recarregar automaticamente em mudanças')
+def dashboard(project_path: str, host: str, port: int, reload: bool):
+    """🌐 Inicia o dashboard interativo.
+    
+    Abre uma interface web com métricas em tempo real,
+    gráficos interativos e monitoramento contínuo da
+    qualidade do código.
+    
+    PROJECT_PATH: Caminho para o diretório do projeto (padrão: diretório atual)
+    """
+    try:
+        from ..web.server import DashboardServer
+        
+        click.echo(ColorHelper.success("🚀 Iniciando dashboard interativo..."))
+        click.echo(f"📁 Projeto: {project_path}")
+        click.echo(f"🌐 URL: http://{host}:{port}")
+        click.echo("\n" + ColorHelper.info("Pressione Ctrl+C para parar o servidor"))
+        
+        server = DashboardServer(project_path)
+        server.run(host=host, port=port, reload=reload)
+        
+    except ImportError as e:
+        click.echo(ColorHelper.error("❌ Dependências do dashboard não encontradas!"))
+        click.echo(ColorHelper.warning("💡 Instale as dependências com: pip install 'codehealthanalyzer[web]'"))
+        click.echo(f"Erro: {e}")
+    except KeyboardInterrupt:
+        click.echo("\n" + ColorHelper.info("🛑 Dashboard interrompido pelo usuário"))
+    except Exception as e:
+        click.echo(ColorHelper.error(f"❌ Erro ao iniciar dashboard: {e}"))
+
+
 def main():
     """Ponto de entrada principal da CLI."""
     cli()

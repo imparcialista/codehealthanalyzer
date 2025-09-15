@@ -30,7 +30,7 @@ if requirements_file.exists():
 
 setup(
     name="codehealthanalyzer",
-    version="1.0.0",
+    version="1.1.0",
     author="Luarco Team",
     author_email="contato@luarco.com.br",
     description="Biblioteca Python para análise de qualidade e saúde de código",
@@ -68,6 +68,13 @@ setup(
         "docs": [
             "sphinx>=5.0.0",
             "sphinx-rtd-theme>=1.0.0",
+        ],
+        "web": [
+            "fastapi>=0.104.0",
+            "uvicorn[standard]>=0.24.0",
+            "jinja2>=3.1.0",
+            "python-multipart>=0.0.6",
+            "websockets>=12.0",
         ],
     },
     entry_points={

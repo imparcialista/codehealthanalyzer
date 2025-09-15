@@ -28,7 +28,14 @@ CodeHealthAnalyzer é uma biblioteca Python moderna e abrangente para análise d
 ### Instalação via pip (recomendado)
 
 ```bash
+# Instalação básica
 pip install codehealthanalyzer
+
+# Instalação com dashboard web interativo
+pip install codehealthanalyzer[web]
+
+# Instalação completa (web + desenvolvimento)
+pip install codehealthanalyzer[web,dev]
 ```
 
 ### Instalação para desenvolvimento
@@ -36,7 +43,7 @@ pip install codehealthanalyzer
 ```bash
 git clone https://github.com/imparcialista/codehealthanalyzer.git
 cd codehealthanalyzer
-pip install -e .
+pip install -e .[web,dev]
 ```
 
 ### Dependências
@@ -47,6 +54,27 @@ pip install -e .
 - rich >= 12.0.0 (opcional, para saída colorida)
 
 ## 🎯 Uso Rápido
+
+### 🌐 Dashboard Interativo
+
+```bash
+# Iniciar dashboard web com métricas em tempo real
+codehealthanalyzer dashboard .
+
+# Dashboard em host e porta específicos
+codehealthanalyzer dashboard . --host 0.0.0.0 --port 8080
+
+# Dashboard com reload automático para desenvolvimento
+codehealthanalyzer dashboard . --reload
+```
+
+**Funcionalidades do Dashboard:**
+- 📊 Métricas em tempo real com atualizações automáticas
+- 📈 Gráficos interativos de tendência de qualidade
+- 🎯 Visualização de violações por tipo
+- 📋 Tabela de arquivos com problemas
+- 🔄 WebSockets para atualizações instantâneas
+- 📱 Interface responsiva e moderna
 
 ### CLI (Interface de Linha de Comando)
 
