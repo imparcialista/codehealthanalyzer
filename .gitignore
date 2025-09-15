@@ -163,8 +163,8 @@ cython_debug/
 
 # CodeHealthAnalyzer specific
 *.json
-*.md
-!README.md
+
+
 !LICENSE
 reports/
 output/
@@ -176,3 +176,4 @@ output/
 build/
 dist/
 *.egg-info/
+example_report.md
