@@ -9,11 +9,8 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-  jobs:
-    post_checkout:
-      # Install gettext for translations
-      - sudo apt-get update
-      - sudo apt-get install -y gettext
+  apt_packages:
+    - gettext
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
