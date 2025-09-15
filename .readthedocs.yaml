@@ -12,8 +12,8 @@ build:
   jobs:
     post_checkout:
       # Install gettext for translations
-      - apt-get update
-      - apt-get install -y gettext
+      - sudo apt-get update
+      - sudo apt-get install -y gettext
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
