@@ -8,7 +8,7 @@ from pathlib import Path
 
 # Lê o README para a descrição longa
 this_directory = Path(__file__).parent
-long_description = (this_directory / "codehealthanalyzer" / "README.md").read_text(encoding='utf-8') if (this_directory / "codehealthanalyzer" / "README.md").exists() else ""
+long_description = (this_directory / "README.md").read_text(encoding='utf-8') if (this_directory / "README.md").exists() else ""
 
 # Lê os requirements
 requirements = []
@@ -20,12 +20,12 @@ if requirements_file.exists():
 setup(
     name="codehealthanalyzer",
     version="1.0.0",
-    author="LRC Team",
-    author_email="dev@lrc.com",
+    author="Luarco Team",
+    author_email="contato@luarco.com.br",
     description="Biblioteca Python para análise de qualidade e saúde de código",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/lrc/codehealthanalyzer",
+    url="https://github.com/imparcialista/codehealthanalyzer",
     packages=find_packages(include=['codehealthanalyzer', 'codehealthanalyzer.*']),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -88,8 +88,8 @@ setup(
         "reporting",
     ],
     project_urls={
-        "Bug Reports": "https://github.com/lrc/codehealthanalyzer/issues",
-        "Source": "https://github.com/lrc/codehealthanalyzer",
+        "Bug Reports": "https://github.com/imparcialista/codehealthanalyzer/issues",
+        "Source": "https://github.com/imparcialista/codehealthanalyzer",
         "Documentation": "https://codehealthanalyzer.readthedocs.io/",
     },
 )

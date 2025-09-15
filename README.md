@@ -32,7 +32,7 @@ pip install codehealthanalyzer
 ### Instalação para desenvolvimento
 
 ```bash
-git clone https://github.com/lrc/codehealthanalyzer.git
+git clone https://github.com/imparcialista/codehealthanalyzer.git
 cd codehealthanalyzer
 pip install -e .
 ```
@@ -344,10 +344,10 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 ## 📞 Suporte
 
-- 📧 Email: dev@lrc.com
-- 🐛 Issues: [GitHub Issues](https://github.com/lrc/codehealthanalyzer/issues)
+- 📧 Email: dev@imparcialista.com
+- 🐛 Issues: [GitHub Issues](https://github.com/imparcialista/codehealthanalyzer/issues)
 - 📖 Documentação: [ReadTheDocs](https://codehealthanalyzer.readthedocs.io/)
 
 ---
 
-**Feito com ❤️ pela equipe LRC**
+**Feito com ❤️ pela equipe Imparcialista**

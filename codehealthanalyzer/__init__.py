@@ -13,8 +13,8 @@ Exemplo de uso:
 """
 
 __version__ = "1.0.0"
-__author__ = "LRC Team"
-__email__ = "dev@lrc.com"
+__author__ = "Imparcialista Team"
+__email__ = "dev@imparcialista.com"
 __description__ = "Biblioteca Python para análise de qualidade e saúde de código"
 
 from .analyzers.violations import ViolationsAnalyzer
