@@ -1,0 +1,6 @@
+type,file,category,priority,lines,details
+violation,codehealthanalyzer\analyzers\templates.py,Template,high,0,class TemplatesAnalyzer: 316 linhas (limite: 300); function analyze_file: 70 linhas (limite: 50); function _generate_recommendations: 40 linhas (limite: 30); function analyze: 48 linhas (limite: 30)
+violation,codehealthanalyzer\analyzers\violations.py,Arquivo Padrão,high,0,function count_effective_lines: 40 linhas (limite: 30); function count_class_lines: 32 linhas (limite: 30); function count_function_lines: 32 linhas (limite: 30); function check_file: 58 linhas (limite: 50); function analyze: 62 linhas (limite: 50)
+violation,codehealthanalyzer\cli\main.py,Arquivo Padrão,high,0,function analyze: 107 linhas (limite: 50); function errors: 32 linhas (limite: 30)
+violation,codehealthanalyzer\reports\formatter.py,Arquivo Padrão,high,12,function _generate_markdown: 73 linhas (limite: 50); function _extract_tabular_data: 45 linhas (limite: 30)
+violation,codehealthanalyzer\reports\generator.py,Arquivo Padrão,high,68,function generate_priorities: 55 linhas (limite: 50)

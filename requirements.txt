@@ -1,0 +1,4 @@
+# Core dependencies for CodeHealthAnalyzer
+ruff>=0.1.0
+click>=8.0.0
+rich>=12.0.0
