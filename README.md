@@ -344,7 +344,7 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 ## 📞 Suporte
 
-- 📧 Email: dev@imparcialista.com
+- 📧 Email: contato@luarco.com.br
 - 🐛 Issues: [GitHub Issues](https://github.com/imparcialista/codehealthanalyzer/issues)
 - 📖 Documentação: [ReadTheDocs](https://codehealthanalyzer.readthedocs.io/)
 
