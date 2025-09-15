@@ -73,6 +73,10 @@ setup(
             "*.json",
         ],
     },
+    data_files=[
+        ('locale/pt_BR/LC_MESSAGES', ['locale/pt_BR/LC_MESSAGES/codehealthanalyzer.po']),
+        ('locale/en/LC_MESSAGES', ['locale/en/LC_MESSAGES/codehealthanalyzer.po']),
+    ],
     keywords=[
         "code-quality",
         "static-analysis",

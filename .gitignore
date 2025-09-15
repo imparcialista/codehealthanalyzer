@@ -168,3 +168,11 @@ cython_debug/
 !LICENSE
 reports/
 output/
+
+# Translation files (compiled)
+*.mo
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

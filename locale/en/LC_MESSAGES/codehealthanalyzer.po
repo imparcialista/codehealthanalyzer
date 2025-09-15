@@ -1,0 +1,95 @@
+# English translations for CodeHealthAnalyzer
+# Copyright (C) 2024 Imparcialista Team
+# This file is distributed under the same license as the CodeHealthAnalyzer package.
+# Imparcialista Team <contato@luarco.com.br>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: CodeHealthAnalyzer 1.0.0\n"
+"Report-Msgid-Bugs-To: contato@luarco.com.br\n"
+"POT-Creation-Date: 2024-01-15 10:00+0000\n"
+"PO-Revision-Date: 2024-01-15 10:00+0000\n"
+"Last-Translator: Imparcialista Team <contato@luarco.com.br>\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# CLI Messages
+msgid "Analyzing project"
+msgstr "Analyzing project"
+
+msgid "Quality Score"
+msgstr "Quality Score"
+
+msgid "Excellent"
+msgstr "Excellent"
+
+msgid "Good"
+msgstr "Good"
+
+msgid "Needs improvement"
+msgstr "Needs improvement"
+
+msgid "Files analyzed"
+msgstr "Files analyzed"
+
+msgid "Files with violations"
+msgstr "Files with violations"
+
+msgid "Templates"
+msgstr "Templates"
+
+msgid "Errors found"
+msgstr "Errors found"
+
+msgid "High priority issues"
+msgstr "High priority issues"
+
+# Analysis Types
+msgid "Violations Analysis"
+msgstr "Violations Analysis"
+
+msgid "Templates Analysis"
+msgstr "Templates Analysis"
+
+msgid "Errors Analysis"
+msgstr "Errors Analysis"
+
+# Priority Levels
+msgid "High"
+msgstr "High"
+
+msgid "Medium"
+msgstr "Medium"
+
+msgid "Low"
+msgstr "Low"
+
+# File Types
+msgid "Python function"
+msgstr "Python function"
+
+msgid "Python class"
+msgstr "Python class"
+
+msgid "Python module"
+msgstr "Python module"
+
+msgid "HTML template"
+msgstr "HTML template"
+
+# Report Messages
+msgid "Report generated successfully"
+msgstr "Report generated successfully"
+
+msgid "No issues found"
+msgstr "No issues found"
+
+msgid "Configuration loaded"
+msgstr "Configuration loaded"
+
+msgid "Invalid project path"
+msgstr "Invalid project path"

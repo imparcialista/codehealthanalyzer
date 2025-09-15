@@ -3,6 +3,8 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import os
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
@@ -30,7 +32,18 @@ extensions = [
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-language = 'pt_BR'
+# Language configuration
+language = 'pt_BR'  # Default language
+
+# Multi-language support
+locale_dirs = ['locale/']
+gettext_compact = False
+
+# Language-specific configurations
+if os.environ.get('READTHEDOCS_LANGUAGE') == 'en':
+    language = 'en'
+elif os.environ.get('SPHINX_LANGUAGE') == 'en':
+    language = 'en'
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

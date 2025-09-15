@@ -1,0 +1,95 @@
+# Portuguese (Brazil) translations for CodeHealthAnalyzer
+# Copyright (C) 2024 Imparcialista Team
+# This file is distributed under the same license as the CodeHealthAnalyzer package.
+# Imparcialista Team <contato@luarco.com.br>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: CodeHealthAnalyzer 1.0.0\n"
+"Report-Msgid-Bugs-To: contato@luarco.com.br\n"
+"POT-Creation-Date: 2024-01-15 10:00+0000\n"
+"PO-Revision-Date: 2024-01-15 10:00+0000\n"
+"Last-Translator: Imparcialista Team <contato@luarco.com.br>\n"
+"Language-Team: Portuguese (Brazil)\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+# CLI Messages
+msgid "Analyzing project"
+msgstr "Analisando projeto"
+
+msgid "Quality Score"
+msgstr "Score de Qualidade"
+
+msgid "Excellent"
+msgstr "Excelente"
+
+msgid "Good"
+msgstr "Bom"
+
+msgid "Needs improvement"
+msgstr "Precisa melhorar"
+
+msgid "Files analyzed"
+msgstr "Arquivos analisados"
+
+msgid "Files with violations"
+msgstr "Arquivos com violações"
+
+msgid "Templates"
+msgstr "Templates"
+
+msgid "Errors found"
+msgstr "Erros encontrados"
+
+msgid "High priority issues"
+msgstr "Issues de alta prioridade"
+
+# Analysis Types
+msgid "Violations Analysis"
+msgstr "Análise de Violações"
+
+msgid "Templates Analysis"
+msgstr "Análise de Templates"
+
+msgid "Errors Analysis"
+msgstr "Análise de Erros"
+
+# Priority Levels
+msgid "High"
+msgstr "Alta"
+
+msgid "Medium"
+msgstr "Média"
+
+msgid "Low"
+msgstr "Baixa"
+
+# File Types
+msgid "Python function"
+msgstr "Função Python"
+
+msgid "Python class"
+msgstr "Classe Python"
+
+msgid "Python module"
+msgstr "Módulo Python"
+
+msgid "HTML template"
+msgstr "Template HTML"
+
+# Report Messages
+msgid "Report generated successfully"
+msgstr "Relatório gerado com sucesso"
+
+msgid "No issues found"
+msgstr "Nenhum problema encontrado"
+
+msgid "Configuration loaded"
+msgstr "Configuração carregada"
+
+msgid "Invalid project path"
+msgstr "Caminho do projeto inválido"

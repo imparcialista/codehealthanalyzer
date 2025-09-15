@@ -2,6 +2,8 @@
 
 > Uma biblioteca Python completa para análise de qualidade e saúde de código
 
+🇧🇷 Português | [🇺🇸 English](README_EN.md)
+
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
