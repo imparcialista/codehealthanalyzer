@@ -1,5 +1,6 @@
 # Include documentation and license files
 include README.md
+include README_EN.md
 include LICENSE
 include requirements.txt
 include example.py
