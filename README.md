@@ -59,13 +59,13 @@ pip install -e .[web,dev]
 
 ```bash
 # Iniciar dashboard web com métricas em tempo real
-codehealthanalyzer dashboard .
+codehealthanalyzer dashboard
 
 # Dashboard em host e porta específicos
-codehealthanalyzer dashboard . --host 0.0.0.0 --port 8080
+codehealthanalyzer dashboard --host 0.0.0.0 --port 8080
 
 # Dashboard com reload automático para desenvolvimento
-codehealthanalyzer dashboard . --reload
+codehealthanalyzer dashboard --reload
 ```
 
 **Funcionalidades do Dashboard:**
@@ -108,6 +108,55 @@ codehealthanalyzer templates --format all
 
 # Análise específica de erros (Ruff)
 codehealthanalyzer errors --format all
+
+## Comandos disponíveis
+
+- `analyze [PROJECT_PATH]` (padrão: `.`): análise completa (violations, templates, errors) e geração de relatórios.
+- `violations [PROJECT_PATH]`: apenas violações de tamanho/linhas.
+- `templates [PROJECT_PATH]`: apenas templates HTML com CSS/JS inline.
+- `errors [PROJECT_PATH]`: apenas erros Ruff.
+- `score [PROJECT_PATH]`: exibe apenas o score de qualidade.
+- `info [PROJECT_PATH]`: informações básicas do projeto.
+- `dashboard [PROJECT_PATH]`: inicia a UI web (FastAPI) com métricas ao vivo.
+- `format [PROJECT_PATH]`: aplica auto-fixes e formatação (isort + black + ruff --fix).
+- `lint [PROJECT_PATH]`: executa checagens (ruff, isort --check, black --check, bandit).
+
+### Opções comuns úteis
+
+- `--output`, `-o`: diretório de saída dos relatórios. Padrão: `./reports`.
+- `--format`, `-f`: formato adicional do relatório: `html`, `markdown` ou `all`.
+- `--no-json`: por padrão, sempre é gerado um JSON. Use esta flag para NÃO gerar o JSON.
+- `--config`, `-c`: caminho para um `config.json` com suas preferências.
+- `--no-default-excludes`: não aplicar as exclusões padrão (tests, scripts, reports, venv etc.).
+
+Exemplos por comando
+
+```bash
+# analyze: JSON + HTML + MD em ./reports
+codehealthanalyzer analyze --format all
+
+# analyze: HTML apenas, sem JSON
+codehealthanalyzer analyze --format html --no-json
+
+# violations: JSON por padrão + HTML/MD
+codehealthanalyzer violations --format all
+
+# templates: JSON por padrão + HTML/MD
+codehealthanalyzer templates --format all
+
+# errors (Ruff): JSON por padrão + HTML/MD
+codehealthanalyzer errors --format all
+
+# desativar exclusões padrão e usar config.json
+codehealthanalyzer analyze --no-default-excludes --config config.json
+
+# format: aplicar auto-fixes e formatação
+codehealthanalyzer format
+codehealthanalyzer format --no-ruff   # p.ex., só isort + black
+
+# lint: checar qualidade e segurança
+codehealthanalyzer lint
+```
 ```
 
 ### API Python
@@ -420,6 +469,48 @@ pytest --cov=codehealthanalyzer
 ruff check codehealthanalyzer/
 black --check codehealthanalyzer/
 ```
+
+## 🧰 Ferramentas de Qualidade e Segurança (para seu projeto)
+
+Além de usar o CodeHealthAnalyzer, recomendamos rodar as seguintes ferramentas diretamente no seu projeto (exemplos a seguir). Substitua `luarco/` pelo diretório do seu projeto.
+
+### Ruff (Linter & Auto-fix)
+
+```bash
+# Verificar erros com ruff
+ruff check luarco/
+
+# Corrigir erros automaticamente (quando possível)
+ruff check luarco/ --fix
+
+# Ver apenas erros críticos
+ruff check luarco/ --select=F821,F841,E9
+```
+
+### Black (Formatação automática)
+
+```bash
+# Black - Formatação automática
+black .
+```
+
+### isort (Organização de imports)
+
+```bash
+# isort - Organização de imports
+isort .
+```
+
+### Bandit (Segurança)
+
+```bash
+# bandit - Segurança (gera relatório JSON)
+bandit -r luarco/ -f json -o bandit-report.json
+```
+
+Observações:
+- É comum rodar `ruff check --fix`, depois `isort .` e `black .` para padronizar o código.
+- Você pode integrar essas ferramentas no seu CI, semelhante ao nosso workflow em `.github/workflows/ci.yml`.
 
 ## 🤝 Contribuição
 

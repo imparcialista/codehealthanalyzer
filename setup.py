@@ -63,6 +63,9 @@ setup(
             "pytest-cov>=4.0.0",
             "black>=22.0.0",
             "isort>=5.0.0",
+            "bandit>=1.7.4",
+            "pre-commit>=3.6.0",
+            "nox>=2024.4.15",
             "mypy>=1.0.0",
         ],
         "docs": [

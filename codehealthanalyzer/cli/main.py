@@ -4,6 +4,8 @@ Este módulo fornece uma CLI amigável para usar a biblioteca CodeHealthAnalyzer
 """
 
 import click
+import subprocess
+import shutil
 import json
 from pathlib import Path
 from typing import Optional
@@ -379,6 +381,63 @@ def dashboard(project_path: str, host: str, port: int, reload: bool):
         click.echo("\n" + ColorHelper.info("🛑 Dashboard interrompido pelo usuário"))
     except Exception as e:
         click.echo(ColorHelper.error(f"❌ Erro ao iniciar dashboard: {e}"))
+
+
+@cli.command()
+@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True), default='.', required=False)
+@click.option('--ruff', is_flag=True, default=True, help='Aplicar auto-fix com ruff (padrão: ligado)')
+@click.option('--isort', 'use_isort', is_flag=True, default=True, help='Aplicar isort (padrão: ligado)')
+@click.option('--black', 'use_black', is_flag=True, default=True, help='Aplicar black (padrão: ligado)')
+def format(project_path: str, ruff: bool, use_isort: bool, use_black: bool):
+    """Formata e aplica auto-fix no código do projeto."""
+    def _run(cmd):
+        click.echo(' '.join(cmd))
+        return subprocess.run(cmd, cwd=project_path).returncode
+
+    rc = 0
+    if use_isort:
+        if shutil.which('isort'):
+            rc |= _run(['isort', '--profile', 'black', project_path])
+        else:
+            click.echo(ColorHelper.warning('isort não encontrado (pip install isort)'))
+    if use_black:
+        if shutil.which('black'):
+            rc |= _run(['black', project_path])
+        else:
+            click.echo(ColorHelper.warning('black não encontrado (pip install black)'))
+    if ruff:
+        if shutil.which('ruff'):
+            rc |= _run(['ruff', 'check', project_path, '--fix', '--exit-non-zero-on-fix', '--unsafe-fixes'])
+        else:
+            click.echo(ColorHelper.warning('ruff não encontrado (pip install ruff)'))
+
+    if rc == 0:
+        click.echo(ColorHelper.success('Formatação e auto-fixes aplicados com sucesso.'))
+    else:
+        click.echo(ColorHelper.warning('Alguns comandos retornaram códigos de saída diferentes de zero.'))
+
+
+@cli.command()
+@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True), default='.', required=False)
+def lint(project_path: str):
+    """Executa checagens de qualidade e segurança (ruff, isort, black, bandit)."""
+    def _run(name, cmd):
+        click.echo(ColorHelper.info(f'== {name} =='))
+        if not shutil.which(cmd[0]):
+            click.echo(ColorHelper.warning(f"{cmd[0]} não encontrado. Instale para habilitar esta verificação."))
+            return 0
+        return subprocess.run(cmd, cwd=project_path).returncode
+
+    rc = 0
+    rc |= _run('Ruff (lint)', ['ruff', 'check', project_path])
+    rc |= _run('isort (check)', ['isort', '--profile', 'black', '--check-only', project_path])
+    rc |= _run('Black (check)', ['black', '--check', project_path])
+    rc |= _run('Bandit (security)', ['bandit', '-q', '-r', project_path])
+
+    if rc == 0:
+        click.echo(ColorHelper.success('Todas as checagens passaram.'))
+    else:
+        click.echo(ColorHelper.error('Falhas detectadas nas checagens.'))
 
 
 def _render_violations_html(report: dict, output_file: Path) -> None:

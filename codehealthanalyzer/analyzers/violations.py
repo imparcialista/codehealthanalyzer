@@ -72,7 +72,7 @@ class ViolationsAnalyzer:
                 effective_count = len(effective_lines)
                 if effective_count == 0:
                     # Fallback: conta linhas não vazias (para arquivos com só docstrings/comentários)
-                    non_empty = len([l for l in lines if l.strip()])
+                    non_empty = len([line for line in lines if line.strip()])
                     return non_empty
                 return effective_count
 
