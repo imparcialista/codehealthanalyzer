@@ -98,20 +98,32 @@ class DashboardServer:
                 errors=errors
             )
             
-            # Extrair métricas principais
+            # Extrair métricas principais a partir dos esquemas atuais
+            vio_stats = violations.get("statistics", {})
+            err_meta = errors.get("metadata", {})
+            templates_list = templates.get("templates", [])
+
+            # Combina arquivos com problemas (violations + warnings) e ordena
+            files_items = (violations.get("violations", []) or []) + (violations.get("warnings", []) or [])
+            def _prio_weight(p: str) -> int:
+                return {"high": 3, "medium": 2, "low": 1}.get((p or "low").lower(), 0)
+            files_items.sort(key=lambda it: (_prio_weight(it.get("priority")), len(it.get("violations", []))), reverse=True)
+
             metrics = {
                 "timestamp": datetime.now().isoformat(),
-                "quality_score": report.get("summary", {}).get("quality_score", 0),
-                "total_files": report.get("summary", {}).get("total_files", 0),
-                "violation_files": report.get("summary", {}).get("violation_files", 0),
-                "template_files": len(templates.get("files", [])),
-                "error_count": len(errors.get("errors", [])),
-                "high_priority_issues": len([
-                    v for v in violations.get("files", [])
-                    if v.get("priority") == "high"
-                ]),
+                # quality_score está no nível superior do relatório consolidado
+                "quality_score": report.get("quality_score", 0),
+                "total_files": vio_stats.get("total_files", 0),
+                "violation_files": vio_stats.get("violation_files", 0),
+                "template_files": len(templates_list),
+                "error_count": err_meta.get("total_errors", 0),
+                "high_priority_issues": vio_stats.get("high_priority", 0),
                 "violations_by_type": self._group_violations_by_type(violations),
                 "score_trend": self._get_score_trend(),
+                "priorities": report.get("priorities", []),
+                "files": files_items,
+                "generated_at": report.get("metadata", {}).get("generated_at", ""),
+                "project": str(self.project_path),
             }
             
             return metrics
@@ -123,12 +135,12 @@ class DashboardServer:
             }
     
     def _group_violations_by_type(self, violations: Dict) -> Dict:
-        """Agrupa violações por tipo para gráficos."""
-        types = {}
-        for file_data in violations.get("files", []):
-            for violation in file_data.get("violations", []):
-                violation_type = violation.get("type", "unknown")
-                types[violation_type] = types.get(violation_type, 0) + 1
+        """Agrupa violações por categoria para gráficos (conforme esquema atual)."""
+        types: Dict[str, int] = {}
+        items = (violations.get("violations", []) or []) + (violations.get("warnings", []) or [])
+        for item in items:
+            category = item.get("category", "Outros")
+            types[category] = types.get(category, 0) + 1
         return types
     
     def _get_score_trend(self) -> List[Dict]:

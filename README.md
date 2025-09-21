@@ -79,20 +79,35 @@ codehealthanalyzer dashboard . --reload
 ### CLI (Interface de Linha de Comando)
 
 ```bash
-# Análise completa do projeto atual
-codehealthanalyzer analyze .
+# Análise completa do projeto atual (o diretório padrão é '.')
+codehealthanalyzer analyze
 
-# Análise com saída em HTML
-codehealthanalyzer analyze . --format html --output reports/
+# Por padrão, um JSON é gerado em ./reports/full_report.json
+# Formatos adicionais (HTML, Markdown ou todos):
+codehealthanalyzer analyze --format html
+codehealthanalyzer analyze --format markdown
+codehealthanalyzer analyze --format all
+
+# Desativar JSON padrão
+codehealthanalyzer analyze --format html --no-json
+
+# Definir diretório de saída (padrão: ./reports)
+codehealthanalyzer analyze --format all --output out/
 
 # Apenas score de qualidade
-codehealthanalyzer score .
+codehealthanalyzer score
 
 # Informações do projeto
-codehealthanalyzer info .
+codehealthanalyzer info
 
 # Análise específica de violações
-codehealthanalyzer violations . --output violations.json
+codehealthanalyzer violations --format all
+
+# Análise específica de templates
+codehealthanalyzer templates --format all
+
+# Análise específica de erros (Ruff)
+codehealthanalyzer errors --format all
 ```
 
 ### API Python
@@ -148,11 +163,12 @@ errors = analyzer.analyze_errors()
   },
   "target_dir": "src/",
   "ruff_fix": true,
-  "templates_dir": ["templates/", "app/templates/"]
+  "templates_dir": ["templates/", "app/templates/"],
   "file_rules": {
     "critical_files": ["main.py", "core.py"],
     "skip_patterns": [".git", "__pycache__", "node_modules"]
-  }
+  },
+  "exclude_dirs": ["legacy/", "playground/"]
 }
 ```
 
@@ -185,6 +201,19 @@ analyzer = CodeAnalyzer('/path/to/project', config)
 - `ruff_fix` (ErrorsAnalyzer):
   - Quando `true`, executa `ruff check --fix` antes de coletar os erros.
   - Padrão: `false`.
+
+- Exclusões de diretórios (padrão e personalizadas):
+  - Por padrão, os analisadores ignoram diretórios não relacionados a código-fonte:
+    - `.git`, `__pycache__`, `.pytest_cache`, `node_modules`, `.ruff_cache`
+    - `tests`, `scripts`, `reports`, `dist`, `build`, `site-packages`
+    - `.tox`, `.nox`, `.venv`, `venv`, `.env`, `migrations`
+  - Para desativar as exclusões padrão: use a flag `--no-default-excludes` nos comandos `analyze`, `violations`, `templates`, `errors`.
+  - Para definir exclusões personalizadas via config:
+    ```json
+    {
+      "exclude_dirs": ["legacy/", "playground/"]
+    }
+    ```
 
 ### Observação para Windows (encoding do console)
 
@@ -282,10 +311,18 @@ O score é calculado baseado em:
 ```
 
 ### HTML
-Relatório interativo com gráficos e métricas visuais.
+Relatório completo e navegável, com:
+- Resumo (Score, totais)
+- Prioridades de ação
+- Tabela de Arquivos com Violações (arquivo, prioridade, nº violações, linhas)
+- Tabela de Erros (Ruff)
+- Tabela de Templates (CSS/JS chars)
 
 ### Markdown
-Relatório em formato Markdown para documentação.
+Relatório rico em Markdown com:
+- Resumo em tabela
+- Prioridades
+- Tabelas para Violações, Erros e Templates
 
 ### CSV
 Dados tabulares para análise em planilhas.

@@ -31,12 +31,14 @@ def cli():
 
 
 @cli.command()
-@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True))
-@click.option('--output', '-o', type=click.Path(), help='Diretório de saída para relatórios')
-@click.option('--format', '-f', type=click.Choice(['json', 'html', 'markdown', 'all']), default='json', help='Formato do relatório')
+@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True), default='.', required=False)
+@click.option('--output', '-o', type=click.Path(), help='Diretório de saída para relatórios (padrão: ./reports)')
+@click.option('--format', '-f', type=click.Choice(['json', 'html', 'markdown', 'all']), default='json', help='Formato do relatório (além do JSON padrão)')
+@click.option('--no-json', is_flag=True, help='Não gerar o relatório JSON padrão')
 @click.option('--config', '-c', type=click.Path(exists=True), help='Arquivo de configuração JSON')
+@click.option('--no-default-excludes', is_flag=True, help='Não aplicar exclusões padrão (tests, scripts, reports, venv, etc.)')
 @click.option('--verbose', '-v', is_flag=True, help='Saída detalhada')
-def analyze(project_path: str, output: Optional[str], format: str, config: Optional[str], verbose: bool):
+def analyze(project_path: str, output: Optional[str], format: str, no_json: bool, config: Optional[str], no_default_excludes: bool, verbose: bool):
     """Executa análise completa do projeto.
 
     Analisa violações de tamanho, templates HTML com CSS/JS inline,
@@ -68,6 +70,9 @@ def analyze(project_path: str, output: Optional[str], format: str, config: Optio
                 click.echo(ColorHelper.info(f"Configuração carregada de {config}"))
         except Exception as e:
             click.echo(ColorHelper.warning(f"Erro ao carregar configuração: {e}"))
+    # Aplica flag de exclusões
+    if no_default_excludes:
+        config_data['no_default_excludes'] = True
     
     # Executa análise
     try:
@@ -76,7 +81,8 @@ def analyze(project_path: str, output: Optional[str], format: str, config: Optio
         if verbose:
             click.echo("Executando análise...")
         
-        report = analyzer.generate_full_report(output_dir=output)
+        # Gera relatório em memória (salvamento tratado abaixo)
+        report = analyzer.generate_full_report()
         
         # Exibe resumo
         summary = report.get('summary', {})
@@ -111,28 +117,30 @@ def analyze(project_path: str, output: Optional[str], format: str, config: Optio
         else:
             click.echo(ColorHelper.success("\nNenhuma ação urgente necessária!"))
         
-        # Salva relatórios nos formatos solicitados
-        if output:
-            output_path = Path(output)
-            formatter = ReportFormatter()
-            
-            if format in ['json', 'all']:
-                json_file = output_path / 'full_report.json'
-                formatter.to_json(report, str(json_file))
-                if verbose:
-                    click.echo(ColorHelper.success(f"Relatório JSON salvo em {json_file}"))
-            
-            if format in ['html', 'all']:
-                html_file = output_path / 'report.html'
-                ReportGenerator().generate_html_report(report, str(html_file))
-                if verbose:
-                    click.echo(ColorHelper.success(f"Relatório HTML salvo em {html_file}"))
-            
-            if format in ['markdown', 'all']:
-                md_file = output_path / 'report.md'
-                formatter.to_markdown(report, str(md_file))
-                if verbose:
-                    click.echo(ColorHelper.success(f"Relatório Markdown salvo em {md_file}"))
+        # Diretório de saída padrão
+        output_path = Path(output or 'reports')
+        output_path.mkdir(parents=True, exist_ok=True)
+        formatter = ReportFormatter()
+
+        # Sempre gerar JSON por padrão, a menos que o usuário desabilite
+        if not no_json:
+            json_file = output_path / 'full_report.json'
+            formatter.to_json(report, str(json_file))
+            if verbose:
+                click.echo(ColorHelper.success(f"Relatório JSON salvo em {json_file}"))
+
+        # Gerar formatos adicionais conforme solicitado
+        if format in ['html', 'all']:
+            html_file = output_path / 'report.html'
+            ReportGenerator().generate_html_report(report, str(html_file))
+            if verbose:
+                click.echo(ColorHelper.success(f"Relatório HTML salvo em {html_file}"))
+
+        if format in ['markdown', 'all']:
+            md_file = output_path / 'report.md'
+            formatter.to_markdown(report, str(md_file))
+            if verbose:
+                click.echo(ColorHelper.success(f"Relatório Markdown salvo em {md_file}"))
         
         click.echo("\n" + ColorHelper.success("Análise concluída com sucesso!"))
         
@@ -144,10 +152,13 @@ def analyze(project_path: str, output: Optional[str], format: str, config: Optio
 
 
 @cli.command()
-@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True))
-@click.option('--output', '-o', type=click.Path(), help='Arquivo de saída JSON')
+@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True), default='.', required=False)
+@click.option('--output', '-o', type=click.Path(), help='Diretório de saída (padrão: ./reports)')
+@click.option('--format', '-f', type=click.Choice(['json', 'html', 'markdown', 'all']), default='json', help='Formato adicional do relatório')
+@click.option('--no-json', is_flag=True, help='Não gerar o relatório JSON padrão')
 @click.option('--config', '-c', type=click.Path(exists=True), help='Arquivo de configuração JSON')
-def violations(project_path: str, output: Optional[str], config: Optional[str]):
+@click.option('--no-default-excludes', is_flag=True, help='Não aplicar exclusões padrão (tests, scripts, reports, venv, etc.)')
+def violations(project_path: str, output: Optional[str], format: str, no_json: bool, config: Optional[str], no_default_excludes: bool):
     """Analisa apenas violações de tamanho.
 
     PROJECT_PATH: Caminho para o diretório do projeto
@@ -159,26 +170,47 @@ def violations(project_path: str, output: Optional[str], config: Optional[str]):
                 config_data = json.load(f)
         except Exception as e:
             click.echo(ColorHelper.warning(f"Erro ao carregar configuração: {e}"))
+    if no_default_excludes:
+        config_data['no_default_excludes'] = True
     
     try:
         analyzer = ViolationsAnalyzer(project_path, config_data)
         report = analyzer.analyze()
+
+        # Diretório de saída padrão
+        output_path = Path(output or 'reports')
+        output_path.mkdir(parents=True, exist_ok=True)
         
-        if output:
-            analyzer.save_report(report, output)
-            click.echo(ColorHelper.success(f"Relatório salvo em {output}"))
-        else:
-            click.echo(json.dumps(report, indent=2, ensure_ascii=False))
+        # JSON por padrão
+        if not no_json:
+            json_file = output_path / 'violations_report.json'
+            with open(json_file, 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
+            click.echo(ColorHelper.success(f"Relatório JSON salvo em {json_file}"))
+
+        # Formatos adicionais
+        if format in ['html', 'all']:
+            html_file = output_path / 'violations_report.html'
+            _render_violations_html(report, html_file)
+            click.echo(ColorHelper.success(f"Relatório HTML salvo em {html_file}"))
+
+        if format in ['markdown', 'all']:
+            md_file = output_path / 'violations_report.md'
+            _render_violations_md(report, md_file)
+            click.echo(ColorHelper.success(f"Relatório Markdown salvo em {md_file}"))
         
     except Exception as e:
         click.echo(ColorHelper.error(f"Erro: {e}"))
 
 
 @cli.command()
-@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True))
-@click.option('--output', '-o', type=click.Path(), help='Arquivo de saída JSON')
+@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True), default='.', required=False)
+@click.option('--output', '-o', type=click.Path(), help='Diretório de saída (padrão: ./reports)')
+@click.option('--format', '-f', type=click.Choice(['json', 'html', 'markdown', 'all']), default='json', help='Formato adicional do relatório')
+@click.option('--no-json', is_flag=True, help='Não gerar o relatório JSON padrão')
 @click.option('--config', '-c', type=click.Path(exists=True), help='Arquivo de configuração JSON')
-def templates(project_path: str, output: Optional[str], config: Optional[str]):
+@click.option('--no-default-excludes', is_flag=True, help='Não aplicar exclusões padrão (tests, scripts, reports, venv, etc.)')
+def templates(project_path: str, output: Optional[str], format: str, no_json: bool, config: Optional[str], no_default_excludes: bool):
     """Analisa apenas templates HTML com CSS/JS inline.
 
     PROJECT_PATH: Caminho para o diretório do projeto
@@ -194,23 +226,39 @@ def templates(project_path: str, output: Optional[str], config: Optional[str]):
     try:
         analyzer = TemplatesAnalyzer(project_path, config_data)
         report = analyzer.analyze()
-        
-        if output:
-            analyzer.save_report(report, output)
-            click.echo(ColorHelper.success(f"Relatório salvo em {output}"))
-        else:
-            click.echo(json.dumps(report, indent=2, ensure_ascii=False))
+
+        # Diretório de saída padrão
+        output_path = Path(output or 'reports')
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        if not no_json:
+            json_file = output_path / 'templates_report.json'
+            with open(json_file, 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
+            click.echo(ColorHelper.success(f"Relatório JSON salvo em {json_file}"))
+
+        if format in ['html', 'all']:
+            html_file = output_path / 'templates_report.html'
+            _render_templates_html(report, html_file)
+            click.echo(ColorHelper.success(f"Relatório HTML salvo em {html_file}"))
+
+        if format in ['markdown', 'all']:
+            md_file = output_path / 'templates_report.md'
+            _render_templates_md(report, md_file)
+            click.echo(ColorHelper.success(f"Relatório Markdown salvo em {md_file}"))
         
     except Exception as e:
         click.echo(ColorHelper.error(f"Erro: {e}"))
 
 
 @cli.command()
-@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True))
-@click.option('--output', '-o', type=click.Path(), help='Arquivo de saída JSON')
-@click.option('--markdown', '-m', type=click.Path(), help='Arquivo de saída Markdown')
+@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True), default='.', required=False)
+@click.option('--output', '-o', type=click.Path(), help='Diretório de saída (padrão: ./reports)')
+@click.option('--format', '-f', type=click.Choice(['json', 'html', 'markdown', 'all']), default='json', help='Formato adicional do relatório')
+@click.option('--no-json', is_flag=True, help='Não gerar o relatório JSON padrão')
 @click.option('--config', '-c', type=click.Path(exists=True), help='Arquivo de configuração JSON')
-def errors(project_path: str, output: Optional[str], markdown: Optional[str], config: Optional[str]):
+@click.option('--no-default-excludes', is_flag=True, help='Não aplicar exclusões padrão (tests, scripts, reports, venv, etc.)')
+def errors(project_path: str, output: Optional[str], format: str, no_json: bool, config: Optional[str], no_default_excludes: bool):
     """Analisa apenas erros de linting (Ruff).
 
     PROJECT_PATH: Caminho para o diretório do projeto
@@ -226,24 +274,32 @@ def errors(project_path: str, output: Optional[str], markdown: Optional[str], co
     try:
         analyzer = ErrorsAnalyzer(project_path, config_data)
         report = analyzer.analyze()
-        
-        if output:
-            analyzer.save_report(report, output)
-            click.echo(ColorHelper.success(f"Relatório JSON salvo em {output}"))
-        
-        if markdown:
-            analyzer.create_markdown_report(report, markdown)
-            click.echo(ColorHelper.success(f"Relatório Markdown salvo em {markdown}"))
-        
-        if not output and not markdown:
-            click.echo(json.dumps(report, indent=2, ensure_ascii=False))
+
+        output_path = Path(output or 'reports')
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        if not no_json:
+            json_file = output_path / 'errors_report.json'
+            with open(json_file, 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
+            click.echo(ColorHelper.success(f"Relatório JSON salvo em {json_file}"))
+
+        if format in ['html', 'all']:
+            html_file = output_path / 'errors_report.html'
+            _render_errors_html(report, html_file)
+            click.echo(ColorHelper.success(f"Relatório HTML salvo em {html_file}"))
+
+        if format in ['markdown', 'all']:
+            md_file = output_path / 'errors_report.md'
+            _render_errors_md(report, md_file)
+            click.echo(ColorHelper.success(f"Relatório Markdown salvo em {md_file}"))
         
     except Exception as e:
         click.echo(ColorHelper.error(f"Erro: {e}"))
 
 
 @cli.command()
-@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True))
+@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True), default='.', required=False)
 def score(project_path: str):
     """Mostra apenas o score de qualidade do projeto.
 
@@ -267,7 +323,7 @@ def score(project_path: str):
 
 
 @cli.command()
-@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True))
+@click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True), default='.', required=False)
 def info(project_path: str):
     """Mostra informações sobre o projeto.
 
@@ -324,6 +380,181 @@ def dashboard(project_path: str, host: str, port: int, reload: bool):
     except Exception as e:
         click.echo(ColorHelper.error(f"❌ Erro ao iniciar dashboard: {e}"))
 
+
+def _render_violations_html(report: dict, output_file: Path) -> None:
+    rows = []
+    items = (report.get('violations', []) or []) + (report.get('warnings', []) or [])
+    for it in items:
+        rows.append(
+            f"<tr><td>{it.get('file','')}</td><td>{it.get('priority','')}</td><td>{len(it.get('violations',[]))}</td><td>{it.get('lines',0)}</td></tr>"
+        )
+    html = f"""
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Relatório de Violações</title>
+  <style>
+    body {{ font-family: Arial, sans-serif; margin: 2rem; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+    th, td {{ border: 1px solid #ddd; padding: 8px; }}
+    th {{ background: #f5f5f5; text-align: left; }}
+  </style>
+  </head>
+  <body>
+  <h1>Relatório de Violações</h1>
+  <ul>
+    <li>Arquivos analisados: {report.get('metadata',{}).get('total_files',0)}</li>
+    <li>Arquivos com violações: {report.get('metadata',{}).get('violation_files',0)}</li>
+  </ul>
+  <table>
+    <thead><tr><th>Arquivo</th><th>Prioridade</th><th>Qtd. Violações</th><th>Linhas</th></tr></thead>
+    <tbody>
+      {''.join(rows)}
+    </tbody>
+  </table>
+  </body>
+</html>
+""".strip()
+    output_file.write_text(html, encoding='utf-8')
+
+
+def _render_violations_md(report: dict, output_file: Path) -> None:
+    lines = [
+        "# Relatório de Violações",
+        "",
+        f"- Arquivos analisados: {report.get('metadata',{}).get('total_files',0)}",
+        f"- Arquivos com violações: {report.get('metadata',{}).get('violation_files',0)}",
+        "",
+        "| Arquivo | Prioridade | Qtd. Violações | Linhas |",
+        "|---|---|---:|---:|",
+    ]
+    items = (report.get('violations', []) or []) + (report.get('warnings', []) or [])
+    for it in items:
+        lines.append(
+            f"| {it.get('file','')} | {it.get('priority','')} | {len(it.get('violations',[]))} | {it.get('lines',0)} |"
+        )
+    output_file.write_text('\n'.join(lines), encoding='utf-8')
+
+
+def _render_templates_html(report: dict, output_file: Path) -> None:
+    rows = []
+    for t in report.get('templates', []) or []:
+        css_chars = t.get('total_css_chars', t.get('css', 0))
+        js_chars = t.get('total_js_chars', t.get('js', 0))
+        rows.append(
+            f"<tr><td>{t.get('file','')}</td><td>{t.get('category','')}</td><td>{t.get('priority','')}</td><td>{css_chars}</td><td>{js_chars}</td></tr>"
+        )
+    stats = report.get('statistics', {})
+    html = f"""
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Relatório de Templates</title>
+  <style>
+    body {{ font-family: Arial, sans-serif; margin: 2rem; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+    th, td {{ border: 1px solid #ddd; padding: 8px; }}
+    th {{ background: #f5f5f5; text-align: left; }}
+  </style>
+  </head>
+  <body>
+  <h1>Relatório de Templates</h1>
+  <ul>
+    <li>Total templates: {stats.get('total_templates',0)}</li>
+    <li>CSS total (chars): {stats.get('total_css_chars',0)}</li>
+    <li>JS total (chars): {stats.get('total_js_chars',0)}</li>
+  </ul>
+  <table>
+    <thead><tr><th>Arquivo</th><th>Categoria</th><th>Prioridade</th><th>CSS (chars)</th><th>JS (chars)</th></tr></thead>
+    <tbody>
+      {''.join(rows)}
+    </tbody>
+  </table>
+  </body>
+</html>
+""".strip()
+    output_file.write_text(html, encoding='utf-8')
+
+
+def _render_templates_md(report: dict, output_file: Path) -> None:
+    stats = report.get('statistics', {})
+    lines = [
+        "# Relatório de Templates",
+        "",
+        f"- Total templates: {stats.get('total_templates',0)}",
+        f"- CSS total (chars): {stats.get('total_css_chars',0)}",
+        f"- JS total (chars): {stats.get('total_js_chars',0)}",
+        "",
+        "| Arquivo | Categoria | Prioridade | CSS (chars) | JS (chars) |",
+        "|---|---|---|---:|---:|",
+    ]
+    for t in report.get('templates', []) or []:
+        css_chars = t.get('total_css_chars', t.get('css', 0))
+        js_chars = t.get('total_js_chars', t.get('js', 0))
+        lines.append(
+            f"| {t.get('file','')} | {t.get('category','')} | {t.get('priority','')} | {css_chars} | {js_chars} |"
+        )
+    output_file.write_text('\n'.join(lines), encoding='utf-8')
+
+
+def _render_errors_html(report: dict, output_file: Path) -> None:
+    rows = []
+    for f in report.get('errors', []) or []:
+        rows.append(
+            f"<tr><td>{f.get('file','')}</td><td>{f.get('category','')}</td><td>{f.get('priority','')}</td><td>{f.get('error_count',0)}</td></tr>"
+        )
+    stats = report.get('statistics', {})
+    html = f"""
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Relatório de Erros (Ruff)</title>
+  <style>
+    body {{ font-family: Arial, sans-serif; margin: 2rem; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+    th, td {{ border: 1px solid #ddd; padding: 8px; }}
+    th {{ background: #f5f5f5; text-align: left; }}
+  </style>
+  </head>
+  <body>
+  <h1>Relatório de Erros (Ruff)</h1>
+  <ul>
+    <li>Alta prioridade: {stats.get('high_priority',0)}</li>
+    <li>Média prioridade: {stats.get('medium_priority',0)}</li>
+    <li>Baixa prioridade: {stats.get('low_priority',0)}</li>
+  </ul>
+  <table>
+    <thead><tr><th>Arquivo</th><th>Categoria</th><th>Prioridade</th><th>Qtd. Erros</th></tr></thead>
+    <tbody>
+      {''.join(rows)}
+    </tbody>
+  </table>
+  </body>
+</html>
+""".strip()
+    output_file.write_text(html, encoding='utf-8')
+
+
+def _render_errors_md(report: dict, output_file: Path) -> None:
+    stats = report.get('statistics', {})
+    lines = [
+        "# Relatório de Erros (Ruff)",
+        "",
+        f"- Alta prioridade: {stats.get('high_priority',0)}",
+        f"- Média prioridade: {stats.get('medium_priority',0)}",
+        f"- Baixa prioridade: {stats.get('low_priority',0)}",
+        "",
+        "| Arquivo | Categoria | Prioridade | Qtd. Erros |",
+        "|---|---|---|---:|",
+    ]
+    for f in report.get('errors', []) or []:
+        lines.append(
+            f"| {f.get('file','')} | {f.get('category','')} | {f.get('priority','')} | {f.get('error_count',0)} |"
+        )
+    output_file.write_text('\n'.join(lines), encoding='utf-8')
 
 def main():
     """Ponto de entrada principal da CLI."""

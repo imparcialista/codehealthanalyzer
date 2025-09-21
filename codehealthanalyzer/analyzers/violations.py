@@ -34,6 +34,9 @@ class ViolationsAnalyzer:
         self.limits = self.config.get('limits', DEFAULT_LIMITS)
         self.violations = []
         self.warnings = []
+        # Exclusions
+        self.no_default_excludes = bool(self.config.get('no_default_excludes', False))
+        self.user_exclude_dirs = list(self.config.get('exclude_dirs', []))
     
     def count_effective_lines(self, file_path: Path, file_type: str) -> int:
         """Conta linhas efetivas (sem docstrings e linhas em branco)."""
@@ -66,7 +69,13 @@ class ViolationsAnalyzer:
                     if not in_docstring and stripped and not stripped.startswith("#"):
                         effective_lines.append(line)
 
-                return len(effective_lines)
+                effective_count = len(effective_lines)
+                if effective_count == 0:
+                    # Fallback: conta linhas não vazias (para arquivos com só docstrings/comentários)
+                    non_empty = len([l for l in lines if l.strip()])
+                    return non_empty
+                return effective_count
+
             else:
                 # Para outros tipos, conta todas as linhas não vazias
                 return len([line for line in lines if line.strip()])
@@ -225,10 +234,15 @@ class ViolationsAnalyzer:
     
     def should_skip_file(self, file_path: Path) -> bool:
         """Verifica se o arquivo deve ser ignorado."""
-        skip_patterns = [
+        default_patterns = [
             ".git", "__pycache__", ".pytest_cache", "node_modules",
-            ".venv", "venv", ".env", "migrations", ".ruff_cache"
+            ".venv", "venv", ".env", "migrations", ".ruff_cache",
+            "tests", "scripts", "reports", "dist", "build", "site-packages",
+            ".tox", ".nox"
         ]
+        skip_patterns = [] if self.no_default_excludes else default_patterns
+        # Add user-defined exclude dirs (strings). Match by substring like defaults.
+        skip_patterns.extend(self.user_exclude_dirs)
         
         path_str = str(file_path)
         return any(pattern in path_str for pattern in skip_patterns)

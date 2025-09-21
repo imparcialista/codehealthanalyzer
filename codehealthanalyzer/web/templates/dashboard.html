@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodeHealthAnalyzer Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <link rel="stylesheet" href="{{ url_for('static', path='/css/dashboard.css') }}">
 </head>
 <body class="bg-gray-100">
@@ -34,6 +34,27 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Controls -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <button id="refresh-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm">Atualizar agora</button>
+                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input id="auto-refresh" type="checkbox" class="rounded" />
+                    Auto-Atualizar
+                </label>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xs text-gray-500 mr-2">Filtrar por prioridade:</span>
+                <button data-priority="all" class="priority-chip active">Todas</button>
+                <button data-priority="high" class="priority-chip">Alta</button>
+                <button data-priority="medium" class="priority-chip">Média</button>
+                <button data-priority="low" class="priority-chip">Baixa</button>
+                <div class="relative ml-2">
+                    <input id="search-input" type="text" placeholder="Buscar arquivo..." class="pl-9 pr-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <span class="absolute left-2 top-1.5 text-gray-400">🔎</span>
+                </div>
+            </div>
+        </div>
         <!-- Métricas Principais -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
@@ -93,19 +114,22 @@
             </div>
         </div>
 
-        <!-- Gráficos -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- Gráfico de Score ao Longo do Tempo -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Tendência do Score de Qualidade</h3>
-                <canvas id="scoreChart" width="400" height="200"></canvas>
+        <!-- Resumo textual -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Resumo da Análise</h3>
+                <span id="summary-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">--</span>
             </div>
+            <div id="summary-kv" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm"></div>
+        </div>
 
-            <!-- Gráfico de Violações por Tipo -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Violações por Tipo</h3>
-                <canvas id="violationsChart" width="400" height="200"></canvas>
+        <!-- Prioridades de Ação -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-medium text-gray-900">PRIORIDADES DE AÇÃO</h3>
+                <span id="priorities-count" class="text-xs text-gray-500">--</span>
             </div>
+            <ol id="priorities-list" class="list-decimal list-inside text-sm text-gray-800 space-y-1"></ol>
         </div>
 
         <!-- Tabela de Arquivos com Problemas -->

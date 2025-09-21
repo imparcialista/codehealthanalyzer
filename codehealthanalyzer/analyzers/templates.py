@@ -37,6 +37,10 @@ class TemplatesAnalyzer:
                 self.project_path / "cha" / "templates",
             ]
         self.templates_paths = [p for p in paths]
+        # Exclusions
+        self.no_default_excludes = bool(self.config.get("no_default_excludes", False))
+        self.user_exclude_dirs = list(self.config.get("exclude_dirs", []))
+
         self.results = []
     
     def analyze_file(self, file_path: Path) -> Dict[str, Any]:
@@ -260,7 +264,13 @@ class TemplatesAnalyzer:
     
     def _should_skip_file(self, file_path: Path) -> bool:
         """Verifica se o arquivo deve ser ignorado."""
-        skip_patterns = ["__pycache__", ".git", "node_modules"]
+        default_patterns = [
+            "__pycache__", ".git", "node_modules", ".ruff_cache", 
+            "tests", "scripts", "reports", "dist", "build", 
+            "site-packages", ".tox", ".nox", ".venv", "venv"
+        ]
+        skip_patterns = [] if self.no_default_excludes else default_patterns
+        skip_patterns.extend(self.user_exclude_dirs)
         path_str = str(file_path)
         return any(pattern in path_str for pattern in skip_patterns)
     

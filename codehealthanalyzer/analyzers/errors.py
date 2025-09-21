@@ -23,6 +23,9 @@ class ErrorsAnalyzer:
         self.config = config or {}
         # Diretório alvo para varredura do Ruff; padrão para raiz do projeto
         self.target_dir = self.config.get('target_dir', '.')
+        # Exclusions
+        self.no_default_excludes = bool(self.config.get('no_default_excludes', False))
+        self.user_exclude_dirs = list(self.config.get('exclude_dirs', []))
     
     def run_ruff_check(self) -> List[Dict]:
         """Executa ruff check e retorna os erros."""
@@ -97,9 +100,21 @@ class ErrorsAnalyzer:
     def process_errors(self, raw_errors: List[Dict]) -> List[Dict]:
         """Processa e agrupa erros por arquivo."""
         files_data = {}
+        default_patterns = [
+            ".git", "__pycache__", ".pytest_cache", "node_modules",
+            ".venv", "venv", ".env", "migrations", ".ruff_cache",
+            "tests", "scripts", "reports", "dist", "build", "site-packages",
+            ".tox", ".nox"
+        ]
+        skip_patterns = [] if self.no_default_excludes else default_patterns
+        skip_patterns.extend(self.user_exclude_dirs)
         
         for error in raw_errors:
             filename = error.get("filename", "unknown")
+            # Ignora arquivos/pastas não relevantes
+            if any(pat in filename for pat in skip_patterns):
+                continue
+            
             if filename not in files_data:
                 files_data[filename] = {
                     "file": filename,
