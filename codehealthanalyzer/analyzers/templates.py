@@ -22,7 +22,21 @@ class TemplatesAnalyzer:
     def __init__(self, project_path: str, config: dict = None):
         self.project_path = Path(project_path)
         self.config = config or {}
-        self.templates_path = self.project_path / "luarco" / "templates"
+        # Permite configurar diretórios de templates via config['templates_dir']
+        configured = self.config.get("templates_dir")
+        paths: List[Path] = []
+        if configured:
+            if isinstance(configured, (list, tuple)):
+                paths = [self.project_path / Path(p) for p in configured]
+            else:
+                paths = [self.project_path / Path(str(configured))]
+        # Fallbacks comuns
+        if not paths:
+            paths = [
+                self.project_path / "templates",
+                self.project_path / "cha" / "templates",
+            ]
+        self.templates_paths = [p for p in paths]
         self.results = []
     
     def analyze_file(self, file_path: Path) -> Dict[str, Any]:
@@ -35,7 +49,7 @@ class TemplatesAnalyzer:
             content_clean = re.sub(r"<!--.*?-->", "", content, flags=re.DOTALL)
 
             analysis = {
-                "file": str(file_path.relative_to(self.templates_path)),
+                "file": str(file_path.relative_to(self.templates_paths[0])),
                 "css_inline": self._extract_css_inline(content_clean),
                 "css_style_tags": self._extract_style_tags(content_clean),
                 "js_inline": self._extract_js_inline(content_clean),
@@ -81,7 +95,7 @@ class TemplatesAnalyzer:
         except Exception as e:
             print(f"Erro ao analisar {file_path}: {e}")
             return {
-                "file": str(file_path.relative_to(self.templates_path)),
+                "file": str(file_path.relative_to(self.templates_paths[0])),
                 "css_inline": [],
                 "css_style_tags": [],
                 "js_inline": [],
@@ -258,18 +272,19 @@ class TemplatesAnalyzer:
         """
         results = []
         
-        if not self.templates_path.exists():
-            print(f"Diretório de templates não encontrado: {self.templates_path}")
+        existing_paths = [p for p in self.templates_paths if p.exists()]
+        if not existing_paths:
+            # Nenhum diretório encontrado – retorna relatório vazio silenciosamente
             return self._empty_report()
         
-        # Processa todos os arquivos HTML
-        for html_file in self.templates_path.rglob("*.html"):
-            if self._should_skip_file(html_file):
-                continue
-            
-            analysis = self.analyze_file(html_file)
-            if analysis["total_css_chars"] > 0 or analysis["total_js_chars"] > 0:
-                results.append(analysis)
+        # Processa todos os arquivos HTML em todos os diretórios existentes
+        for base in existing_paths:
+            for html_file in base.rglob("*.html"):
+                if self._should_skip_file(html_file):
+                    continue
+                analysis = self.analyze_file(html_file)
+                if analysis["total_css_chars"] > 0 or analysis["total_js_chars"] > 0:
+                    results.append(analysis)
         
         # Ordena por total de caracteres (CSS + JS)
         results.sort(
@@ -291,7 +306,7 @@ class TemplatesAnalyzer:
         return {
             "metadata": {
                 "generated_at": datetime.now().isoformat(),
-                "templates_path": str(self.templates_path),
+                "templates_paths": [str(p) for p in existing_paths],
                 "total_templates": stats["total_templates"]
             },
             "templates": results,
@@ -303,7 +318,7 @@ class TemplatesAnalyzer:
         return {
             "metadata": {
                 "generated_at": datetime.now().isoformat(),
-                "templates_path": str(self.templates_path),
+                "templates_paths": [],
                 "total_templates": 0
             },
             "templates": [],

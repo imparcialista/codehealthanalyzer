@@ -30,7 +30,7 @@ if requirements_file.exists():
 
 setup(
     name="codehealthanalyzer",
-    version="1.1.0",
+    version="1.1.1",
     author="Luarco Team",
     author_email="contato@luarco.com.br",
     description="Biblioteca Python para análise de qualidade e saúde de código",
@@ -89,6 +89,11 @@ setup(
             "*.md",
             "*.txt",
             "*.json",
+            # Web assets and templates for dashboard
+            "web/templates/*.html",
+            "web/static/*.css",
+            "web/static/css/*.css",
+            "web/static/js/*.js",
         ],
     },
     data_files=[

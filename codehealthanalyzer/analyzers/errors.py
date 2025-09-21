@@ -8,8 +8,7 @@ import json
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any
-
+from typing import Dict, List
 
 class ErrorsAnalyzer:
     """Analisador de erros de linting.
@@ -22,18 +21,20 @@ class ErrorsAnalyzer:
     def __init__(self, project_path: str, config: dict = None):
         self.project_path = Path(project_path)
         self.config = config or {}
-        self.target_dir = self.config.get('target_dir', 'luarco/')
+        # Diretório alvo para varredura do Ruff; padrão para raiz do projeto
+        self.target_dir = self.config.get('target_dir', '.')
     
     def run_ruff_check(self) -> List[Dict]:
         """Executa ruff check e retorna os erros."""
         try:
-            # Primeiro, tenta aplicar correções automáticas
-            subprocess.run(
-                ["ruff", "check", self.target_dir, "--fix"], 
-                capture_output=True, 
-                text=True,
-                cwd=self.project_path
-            )
+            # Se habilitado na config, tenta aplicar correções automáticas
+            if self.config.get('ruff_fix', False):
+                subprocess.run(
+                    ["ruff", "check", self.target_dir, "--fix"], 
+                    capture_output=True, 
+                    text=True,
+                    cwd=self.project_path
+                )
 
             # Depois, verifica erros restantes
             result = subprocess.run(
@@ -57,9 +58,8 @@ class ErrorsAnalyzer:
             return []
     
     def categorize_error(self, error: Dict) -> str:
-        """Categoriza o erro baseado no código e mensagem."""
+        """Categoriza o erro baseado no código."""
         code = error.get('code', '')
-        message = error.get('message', '').lower()
         
         # Categorização baseada no código do erro
         if code.startswith('F'):

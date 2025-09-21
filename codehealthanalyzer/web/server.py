@@ -4,7 +4,7 @@ import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse
@@ -158,7 +158,7 @@ class DashboardServer:
             for client in self.connected_clients.copy():
                 try:
                     await client.send_text(message)
-                except:
+                except Exception:
                     self.connected_clients.remove(client)
     
     def run(self, host: str = "127.0.0.1", port: int = 8000, reload: bool = False):

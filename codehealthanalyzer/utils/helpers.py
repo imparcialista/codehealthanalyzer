@@ -4,7 +4,7 @@ Este módulo contém funções auxiliares para operações comuns como
 manipulação de arquivos, formatação de dados, etc.
 """
 
-import os
+
 import json
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union
@@ -344,19 +344,19 @@ class ColorHelper:
     @staticmethod
     def success(text: str) -> str:
         """Formata texto como sucesso (verde)."""
-        return ColorHelper.colorize(f"✅ {text}", 'green')
+        return ColorHelper.colorize(f"[OK] {text}", 'green')
     
     @staticmethod
     def warning(text: str) -> str:
         """Formata texto como aviso (amarelo)."""
-        return ColorHelper.colorize(f"⚠️  {text}", 'yellow')
+        return ColorHelper.colorize(f"[WARN] {text}", 'yellow')
     
     @staticmethod
     def error(text: str) -> str:
         """Formata texto como erro (vermelho)."""
-        return ColorHelper.colorize(f"❌ {text}", 'red')
+        return ColorHelper.colorize(f"[ERROR] {text}", 'red')
     
     @staticmethod
     def info(text: str) -> str:
         """Formata texto como informação (azul)."""
-        return ColorHelper.colorize(f"ℹ️  {text}", 'blue')
+        return ColorHelper.colorize(f"[INFO] {text}", 'blue')

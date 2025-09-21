@@ -4,9 +4,9 @@ Este módulo contém a classe ViolationsAnalyzer que verifica limites de tamanho
 conforme definido nas práticas de código do projeto.
 """
 
-import sys
+
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 from datetime import datetime
 import json
 

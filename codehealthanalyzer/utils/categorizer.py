@@ -130,8 +130,6 @@ class Categorizer:
         Returns:
             str: Categoria do erro
         """
-        message_lower = message.lower()
-        
         # Categorização baseada no código do erro
         if error_code.startswith('F'):
             if error_code in ['F401', 'F811', 'F821']:

@@ -147,6 +147,8 @@ errors = analyzer.analyze_errors()
     "test_file": {"yellow": 400, "red": 600}
   },
   "target_dir": "src/",
+  "ruff_fix": true,
+  "templates_dir": ["templates/", "app/templates/"]
   "file_rules": {
     "critical_files": ["main.py", "core.py"],
     "skip_patterns": [".git", "__pycache__", "node_modules"]
@@ -169,6 +171,41 @@ with open('config.json') as f:
 
 analyzer = CodeAnalyzer('/path/to/project', config)
 ```
+
+### Novas opções de configuração
+
+- `templates_dir`:
+  - Define um ou mais diretórios onde os templates HTML serão buscados.
+  - Aceita string (ex.: `"templates/"`) ou lista de strings (ex.: `["templates/", "app/templates/"]`).
+  - Padrões automáticos: `templates/` e `luarco/templates/` (se existirem no projeto).
+
+- `target_dir` (ErrorsAnalyzer/Ruff):
+  - Diretório raiz analisado pelo Ruff. Padrão agora é `"."` (raiz do projeto).
+
+- `ruff_fix` (ErrorsAnalyzer):
+  - Quando `true`, executa `ruff check --fix` antes de coletar os erros.
+  - Padrão: `false`.
+
+### Observação para Windows (encoding do console)
+
+Para evitar problemas de encoding (CP1252) no console do Windows, a CLI usa apenas caracteres ASCII.
+Se desejar usar emojis/Unicode, configure o terminal para UTF-8. Exemplo no PowerShell:
+
+```powershell
+$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+```
+
+## 🌍 Traduções
+
+- Arquivos compilados `.mo` agora são incluídos no pacote distribuído.
+- Para compilar localmente, use `scripts/compile_translations.py` (requer `gettext` ou fallback Python embutido).
+
+## 🔁 Integração Contínua (CI)
+
+  - Lint com Ruff (`ruff check`).
+  - Testes com `pytest`.
+  - Matriz Python: 3.8 a 3.12.
+  - (Opcional) Build de documentação Sphinx.
 
 ## 📈 Tipos de Análise
 

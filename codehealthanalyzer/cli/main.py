@@ -14,16 +14,16 @@ from ..analyzers.errors import ErrorsAnalyzer
 from ..reports.generator import ReportGenerator
 from ..reports.formatter import ReportFormatter
 from ..utils.validators import PathValidator
-from ..utils.helpers import ColorHelper, TimeHelper
-from .. import CodeAnalyzer
+from ..utils.helpers import ColorHelper
+from .. import CodeAnalyzer, __version__
 
 
 @click.group()
-@click.version_option(version='1.0.0')
+@click.version_option(version=__version__)
 def cli():
-    """🔍 CodeHealthAnalyzer - Análise de qualidade e saúde de código.
-    
-    Uma ferramenta completa para analisar a qualidade do seu código Python,
+    """CodeHealthAnalyzer - Análise de qualidade e saúde de código.
+
+    Uma ferramenta para analisar a qualidade do seu código Python,
     detectar violações de tamanho, analisar templates HTML e integrar com
     ferramentas de linting como Ruff.
     """
@@ -37,11 +37,11 @@ def cli():
 @click.option('--config', '-c', type=click.Path(exists=True), help='Arquivo de configuração JSON')
 @click.option('--verbose', '-v', is_flag=True, help='Saída detalhada')
 def analyze(project_path: str, output: Optional[str], format: str, config: Optional[str], verbose: bool):
-    """🔍 Executa análise completa do projeto.
-    
+    """Executa análise completa do projeto.
+
     Analisa violações de tamanho, templates HTML com CSS/JS inline,
     e erros de linting (Ruff) em um projeto Python.
-    
+
     PROJECT_PATH: Caminho para o diretório do projeto
     """
     if verbose:
@@ -54,9 +54,9 @@ def analyze(project_path: str, output: Optional[str], format: str, config: Optio
         return
     
     if verbose:
-        click.echo(f"📊 Projeto: {project_info['name']}")
-        click.echo(f"📁 Arquivos Python: {project_info['python_files']}")
-        click.echo(f"🎨 Templates HTML: {project_info['html_files']}")
+        click.echo(f"Projeto: {project_info['name']}")
+        click.echo(f"Arquivos Python: {project_info['python_files']}")
+        click.echo(f"Templates HTML: {project_info['html_files']}")
     
     # Carrega configuração se fornecida
     config_data = {}
@@ -74,7 +74,7 @@ def analyze(project_path: str, output: Optional[str], format: str, config: Optio
         analyzer = CodeAnalyzer(project_path, config_data)
         
         if verbose:
-            click.echo("🔍 Executando análise...")
+            click.echo("Executando análise...")
         
         report = analyzer.generate_full_report(output_dir=output)
         
@@ -83,7 +83,7 @@ def analyze(project_path: str, output: Optional[str], format: str, config: Optio
         quality_score = summary.get('quality_score', 0)
         
         click.echo("\n" + "="*50)
-        click.echo("📊 RESUMO DA ANÁLISE")
+        click.echo("RESUMO DA ANÁLISE")
         click.echo("="*50)
         
         # Score de qualidade com cor
@@ -95,21 +95,21 @@ def analyze(project_path: str, output: Optional[str], format: str, config: Optio
             score_text = ColorHelper.error(f"Score de Qualidade: {quality_score}/100")
         
         click.echo(score_text)
-        click.echo(f"📁 Arquivos analisados: {summary.get('total_files', 0)}")
-        click.echo(f"⚠️  Arquivos com violações: {summary.get('violation_files', 0)}")
-        click.echo(f"🎨 Templates: {summary.get('total_templates', 0)}")
-        click.echo(f"🔍 Erros Ruff: {summary.get('total_errors', 0)}")
-        click.echo(f"🔥 Issues de alta prioridade: {summary.get('high_priority_issues', 0)}")
+        click.echo(f"Arquivos analisados: {summary.get('total_files', 0)}")
+        click.echo(f"Arquivos com violações: {summary.get('violation_files', 0)}")
+        click.echo(f"Templates: {summary.get('total_templates', 0)}")
+        click.echo(f"Erros Ruff: {summary.get('total_errors', 0)}")
+        click.echo(f"Issues de alta prioridade: {summary.get('high_priority_issues', 0)}")
         
         # Prioridades de ação
         priorities = report.get('priorities', [])
         if priorities:
-            click.echo("\n🎯 PRIORIDADES DE AÇÃO:")
+            click.echo("\nPRIORIDADES DE AÇÃO:")
             for i, priority in enumerate(priorities[:5], 1):  # Top 5
-                icon = {'high': '🔴', 'medium': '🟡', 'low': '🟢'}.get(priority.get('priority', 'low'), '⚪')
+                icon = {'high': '', 'medium': '', 'low': ''}.get(priority.get('priority', 'low'), '')
                 click.echo(f"{i}. {icon} {priority.get('title', 'N/A')} ({priority.get('count', 0)})")
         else:
-            click.echo(ColorHelper.success("\n✅ Nenhuma ação urgente necessária!"))
+            click.echo(ColorHelper.success("\nNenhuma ação urgente necessária!"))
         
         # Salva relatórios nos formatos solicitados
         if output:
@@ -148,8 +148,8 @@ def analyze(project_path: str, output: Optional[str], format: str, config: Optio
 @click.option('--output', '-o', type=click.Path(), help='Arquivo de saída JSON')
 @click.option('--config', '-c', type=click.Path(exists=True), help='Arquivo de configuração JSON')
 def violations(project_path: str, output: Optional[str], config: Optional[str]):
-    """🚨 Analisa apenas violações de tamanho.
-    
+    """Analisa apenas violações de tamanho.
+
     PROJECT_PATH: Caminho para o diretório do projeto
     """
     config_data = {}
@@ -179,8 +179,8 @@ def violations(project_path: str, output: Optional[str], config: Optional[str]):
 @click.option('--output', '-o', type=click.Path(), help='Arquivo de saída JSON')
 @click.option('--config', '-c', type=click.Path(exists=True), help='Arquivo de configuração JSON')
 def templates(project_path: str, output: Optional[str], config: Optional[str]):
-    """🎨 Analisa apenas templates HTML com CSS/JS inline.
-    
+    """Analisa apenas templates HTML com CSS/JS inline.
+
     PROJECT_PATH: Caminho para o diretório do projeto
     """
     config_data = {}
@@ -211,8 +211,8 @@ def templates(project_path: str, output: Optional[str], config: Optional[str]):
 @click.option('--markdown', '-m', type=click.Path(), help='Arquivo de saída Markdown')
 @click.option('--config', '-c', type=click.Path(exists=True), help='Arquivo de configuração JSON')
 def errors(project_path: str, output: Optional[str], markdown: Optional[str], config: Optional[str]):
-    """⚠️ Analisa apenas erros de linting (Ruff).
-    
+    """Analisa apenas erros de linting (Ruff).
+
     PROJECT_PATH: Caminho para o diretório do projeto
     """
     config_data = {}
@@ -245,8 +245,8 @@ def errors(project_path: str, output: Optional[str], markdown: Optional[str], co
 @cli.command()
 @click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True))
 def score(project_path: str):
-    """📊 Mostra apenas o score de qualidade do projeto.
-    
+    """Mostra apenas o score de qualidade do projeto.
+
     PROJECT_PATH: Caminho para o diretório do projeto
     """
     try:
@@ -269,8 +269,8 @@ def score(project_path: str):
 @cli.command()
 @click.argument('project_path', type=click.Path(exists=True, file_okay=False, dir_okay=True))
 def info(project_path: str):
-    """ℹ️ Mostra informações sobre o projeto.
-    
+    """Mostra informações sobre o projeto.
+
     PROJECT_PATH: Caminho para o diretório do projeto
     """
     project_info = PathValidator.get_project_info(project_path)
@@ -279,15 +279,15 @@ def info(project_path: str):
         click.echo(ColorHelper.error(f"Projeto inválido: {project_info.get('error', 'Erro desconhecido')}"))
         return
     
-    click.echo("📊 INFORMAÇÕES DO PROJETO")
+    click.echo("INFORMAÇÕES DO PROJETO")
     click.echo("="*30)
-    click.echo(f"📁 Nome: {project_info['name']}")
-    click.echo(f"📂 Caminho: {project_info['path']}")
-    click.echo(f"🐍 Projeto Python: {'Sim' if project_info['is_python_project'] else 'Não'}")
-    click.echo(f"🎨 Tem templates: {'Sim' if project_info['has_templates'] else 'Não'}")
-    click.echo(f"📄 Arquivos Python: {project_info['python_files']}")
-    click.echo(f"🌐 Arquivos HTML: {project_info['html_files']}")
-    click.echo(f"📊 Total de arquivos: {project_info['total_files']}")
+    click.echo(f"Nome: {project_info['name']}")
+    click.echo(f"Caminho: {project_info['path']}")
+    click.echo(f"Projeto Python: {'Sim' if project_info['is_python_project'] else 'Não'}")
+    click.echo(f"Tem templates: {'Sim' if project_info['has_templates'] else 'Não'}")
+    click.echo(f"Arquivos Python: {project_info['python_files']}")
+    click.echo(f"Arquivos HTML: {project_info['html_files']}")
+    click.echo(f"Total de arquivos: {project_info['total_files']}")
 
 
 @cli.command()
@@ -296,20 +296,20 @@ def info(project_path: str):
 @click.option('--port', '-p', default=8000, type=int, help='Porta do servidor (padrão: 8000)')
 @click.option('--reload', is_flag=True, help='Recarregar automaticamente em mudanças')
 def dashboard(project_path: str, host: str, port: int, reload: bool):
-    """🌐 Inicia o dashboard interativo.
-    
+    """Inicia o dashboard interativo.
+
     Abre uma interface web com métricas em tempo real,
     gráficos interativos e monitoramento contínuo da
     qualidade do código.
-    
+
     PROJECT_PATH: Caminho para o diretório do projeto (padrão: diretório atual)
     """
     try:
         from ..web.server import DashboardServer
         
-        click.echo(ColorHelper.success("🚀 Iniciando dashboard interativo..."))
-        click.echo(f"📁 Projeto: {project_path}")
-        click.echo(f"🌐 URL: http://{host}:{port}")
+        click.echo(ColorHelper.success("Iniciando dashboard interativo..."))
+        click.echo(f"Projeto: {project_path}")
+        click.echo(f"URL: http://{host}:{port}")
         click.echo("\n" + ColorHelper.info("Pressione Ctrl+C para parar o servidor"))
         
         server = DashboardServer(project_path)

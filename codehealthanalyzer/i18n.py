@@ -6,7 +6,6 @@ Este módulo fornece suporte para múltiplos idiomas na aplicação.
 import gettext
 import os
 from pathlib import Path
-from typing import Optional
 
 # Idiomas suportados
 SUPPORTED_LANGUAGES = {

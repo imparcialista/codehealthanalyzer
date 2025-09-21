@@ -167,7 +167,8 @@ cython_debug/
 !README.md
 !README_EN.md
 !LICENSE
-reports/
+# Ignore only the top-level reports directory for generated artifacts
+/reports/
 output/
 
 # Translation files (compiled)
@@ -178,3 +179,6 @@ build/
 dist/
 *.egg-info/
 example_report.md
+scripts/release.bat
+scripts/release.py
+scripts/release.sh

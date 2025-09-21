@@ -9,6 +9,8 @@ include example.py
 recursive-include codehealthanalyzer *.py
 recursive-include codehealthanalyzer *.json
 recursive-include codehealthanalyzer *.txt
+recursive-include locale *.mo
+recursive-include locale *.po
 
 # Include web assets for dashboard
 recursive-include codehealthanalyzer/web/static *.css

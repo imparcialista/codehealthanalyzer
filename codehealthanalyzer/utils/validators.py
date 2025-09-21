@@ -3,9 +3,9 @@
 Este módulo contém validadores para caminhos, configurações e outros dados.
 """
 
-import os
+
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 
 class PathValidator:
