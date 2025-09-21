@@ -6,8 +6,8 @@ Contém os analisadores especializados para diferentes aspectos da qualidade do 
 - ErrorsAnalyzer: Analisa erros de linting (Ruff, etc.)
 """
 
-from .violations import ViolationsAnalyzer
-from .templates import TemplatesAnalyzer
 from .errors import ErrorsAnalyzer
+from .templates import TemplatesAnalyzer
+from .violations import ViolationsAnalyzer
 
-__all__ = ['ViolationsAnalyzer', 'TemplatesAnalyzer', 'ErrorsAnalyzer']
+__all__ = ["ViolationsAnalyzer", "TemplatesAnalyzer", "ErrorsAnalyzer"]

@@ -15,7 +15,9 @@ def format(session: nox.Session) -> None:
     session.install("ruff", "black", "isort")
     session.run("isort", "--profile", "black", ".")
     session.run("black", ".")
-    session.run("ruff", "check", ".", "--fix", "--exit-non-zero-on-fix", "--unsafe-fixes")
+    session.run(
+        "ruff", "check", ".", "--fix", "--exit-non-zero-on-fix", "--unsafe-fixes"
+    )
 
 
 @nox.session(reuse_venv=True)

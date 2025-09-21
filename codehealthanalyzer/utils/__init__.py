@@ -5,7 +5,7 @@ e outras operações de suporte.
 """
 
 from .categorizer import Categorizer
-from .validators import PathValidator
 from .helpers import FileHelper
+from .validators import PathValidator
 
-__all__ = ['Categorizer', 'PathValidator', 'FileHelper']
+__all__ = ["Categorizer", "PathValidator", "FileHelper"]

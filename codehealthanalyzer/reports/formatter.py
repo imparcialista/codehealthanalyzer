@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 from io import StringIO
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 from ..utils.helpers import FileHelper
 

@@ -3,13 +3,22 @@
 Este script permite instalar a biblioteca CodeHealthAnalyzer usando pip.
 """
 
-from setuptools import setup, find_packages
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 # Lê o README para a descrição longa (português + inglês)
 this_directory = Path(__file__).parent
-readme_pt = (this_directory / "README.md").read_text(encoding='utf-8') if (this_directory / "README.md").exists() else ""
-readme_en = (this_directory / "README_EN.md").read_text(encoding='utf-8') if (this_directory / "README_EN.md").exists() else ""
+readme_pt = (
+    (this_directory / "README.md").read_text(encoding="utf-8")
+    if (this_directory / "README.md").exists()
+    else ""
+)
+readme_en = (
+    (this_directory / "README_EN.md").read_text(encoding="utf-8")
+    if (this_directory / "README_EN.md").exists()
+    else ""
+)
 
 # Combina ambas as versões
 if readme_pt and readme_en:
@@ -25,8 +34,10 @@ else:
 requirements = []
 requirements_file = this_directory / "requirements.txt"
 if requirements_file.exists():
-    with open(requirements_file, 'r', encoding='utf-8') as f:
-        requirements = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    with open(requirements_file, "r", encoding="utf-8") as f:
+        requirements = [
+            line.strip() for line in f if line.strip() and not line.startswith("#")
+        ]
 
 setup(
     name="codehealthanalyzer",
@@ -37,7 +48,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/imparcialista/codehealthanalyzer",
-    packages=find_packages(include=['codehealthanalyzer', 'codehealthanalyzer.*']),
+    packages=find_packages(include=["codehealthanalyzer", "codehealthanalyzer.*"]),
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -52,7 +63,8 @@ setup(
         "Programming Language :: Python :: 3.12",
     ],
     python_requires=">=3.8",
-    install_requires=requirements or [
+    install_requires=requirements
+    or [
         "ruff>=0.1.0",
         "click>=8.0.0",
         "rich>=12.0.0",
@@ -64,7 +76,6 @@ setup(
             "black>=22.0.0",
             "isort>=5.0.0",
             "bandit>=1.7.4",
-            "pre-commit>=3.6.0",
             "nox>=2024.4.15",
             "mypy>=1.0.0",
         ],
@@ -100,8 +111,11 @@ setup(
         ],
     },
     data_files=[
-        ('locale/pt_BR/LC_MESSAGES', ['locale/pt_BR/LC_MESSAGES/codehealthanalyzer.po']),
-        ('locale/en/LC_MESSAGES', ['locale/en/LC_MESSAGES/codehealthanalyzer.po']),
+        (
+            "locale/pt_BR/LC_MESSAGES",
+            ["locale/pt_BR/LC_MESSAGES/codehealthanalyzer.po"],
+        ),
+        ("locale/en/LC_MESSAGES", ["locale/en/LC_MESSAGES/codehealthanalyzer.po"]),
     ],
     keywords=[
         "code-quality",

@@ -26,7 +26,7 @@ def compile_po_files():
         
         try:
             # Tentar usar msgfmt primeiro
-            result = subprocess.run(
+            subprocess.run(
                 ['msgfmt', '-o', str(mo_file), str(po_file)],
                 capture_output=True,
                 text=True,
@@ -52,7 +52,7 @@ def compile_po_files():
 def compile_po_with_python(po_file, mo_file):
     """Compila arquivo .po usando Python puro (fallback)."""
     import struct
-    
+
     # Ler arquivo .po
     translations = {}
     current_msgid = None
@@ -179,7 +179,7 @@ def create_pot_template():
             '--msgid-bugs-address=contato@luarco.com.br',
         ] + python_files
         
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        subprocess.run(cmd, capture_output=True, text=True, check=True)
         print(f"✅ Template criado: {pot_file.relative_to(project_root)}")
         return True
         
