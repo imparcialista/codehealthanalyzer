@@ -10,6 +10,11 @@ recursive-include codehealthanalyzer *.py
 recursive-include codehealthanalyzer *.json
 recursive-include codehealthanalyzer *.txt
 
+# Include web assets for dashboard
+recursive-include codehealthanalyzer/web/static *.css
+recursive-include codehealthanalyzer/web/static *.js
+recursive-include codehealthanalyzer/web/templates *.html
+
 # Exclude development and cache files
 global-exclude __pycache__
 global-exclude *.py[co]
