@@ -414,6 +414,9 @@ def errors(
         except Exception as e:
             click.echo(ColorHelper.warning(f"Erro ao carregar configuração: {e}"))
 
+    if no_default_excludes:
+        config_data["no_default_excludes"] = True
+
     try:
         analyzer = ErrorsAnalyzer(project_path, config_data)
         report = analyzer.analyze()
@@ -545,17 +548,17 @@ def dashboard(project_path: str, host: str, port: int, reload: bool):
         server.run(host=host, port=port, reload=reload)
 
     except ImportError as e:
-        click.echo(ColorHelper.error("❌ Dependências do dashboard não encontradas!"))
+        click.echo(ColorHelper.error("Dependências do dashboard não encontradas!"))
         click.echo(
             ColorHelper.warning(
-                "💡 Instale as dependências com: pip install 'codehealthanalyzer[web]'"
+                "Instale as dependências com: pip install 'codehealthanalyzer[web]'"
             )
         )
         click.echo(f"Erro: {e}")
     except KeyboardInterrupt:
-        click.echo("\n" + ColorHelper.info("🛑 Dashboard interrompido pelo usuário"))
+        click.echo("\n" + ColorHelper.info("Dashboard interrompido pelo usuário"))
     except Exception as e:
-        click.echo(ColorHelper.error(f"❌ Erro ao iniciar dashboard: {e}"))
+        click.echo(ColorHelper.error(f"Erro ao iniciar dashboard: {e}"))
 
 
 @cli.command()
@@ -566,22 +569,19 @@ def dashboard(project_path: str, host: str, port: int, reload: bool):
     required=False,
 )
 @click.option(
-    "--ruff",
-    is_flag=True,
+    "--ruff/--no-ruff",
     default=True,
     help="Aplicar auto-fix com ruff (padrão: ligado)",
 )
 @click.option(
-    "--isort",
+    "--isort/--no-isort",
     "use_isort",
-    is_flag=True,
     default=True,
     help="Aplicar isort (padrão: ligado)",
 )
 @click.option(
-    "--black",
+    "--black/--no-black",
     "use_black",
-    is_flag=True,
     default=True,
     help="Aplicar black (padrão: ligado)",
 )
