@@ -1,13 +1,18 @@
-"""Analisador de violações de tamanho de arquivos e funções.
+"""Analisador de violações de tamanho de arquivos e funções."""
 
-Este módulo contém a classe ViolationsAnalyzer que verifica limites de tamanho
-conforme definido nas práticas de código do projeto.
-"""
+from __future__ import annotations
 
+import ast
 import json
+import logging
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Iterable, List, Tuple
+
+from .base import BaseAnalyzer
+
+logger = logging.getLogger(__name__)
 
 # Limites definidos no CODE_PRACTICES.md
 DEFAULT_LIMITS = {
@@ -19,295 +24,207 @@ DEFAULT_LIMITS = {
 }
 
 
-class ViolationsAnalyzer:
-    """Analisador de violações de tamanho de código.
+@dataclass
+class _FunctionInfo:
+    name: str
+    length: int
 
-    Args:
-        project_path (str): Caminho para o diretório do projeto
-        config (dict, optional): Configurações personalizadas
-    """
 
-    def __init__(self, project_path: str, config: dict = None):
-        self.project_path = Path(project_path)
-        self.config = config or {}
+@dataclass
+class _ClassInfo:
+    name: str
+    length: int
+
+
+class ViolationsAnalyzer(BaseAnalyzer):
+    """Analisador de violações de tamanho de código."""
+
+    PYTHON_PATTERNS: Tuple[str, ...] = ("*.py",)
+    TEMPLATE_PATTERNS: Tuple[str, ...] = ("*.html",)
+
+    def __init__(self, project_path: str, config: dict | None = None) -> None:
+        super().__init__(project_path, config)
         self.limits = self.config.get("limits", DEFAULT_LIMITS)
-        self.violations = []
-        self.warnings = []
-        # Exclusions
-        self.no_default_excludes = bool(self.config.get("no_default_excludes", False))
-        self.user_exclude_dirs = list(self.config.get("exclude_dirs", []))
+        self.violations: List[Dict] = []
+        self.warnings: List[Dict] = []
 
-    def count_effective_lines(self, file_path: Path, file_type: str) -> int:
-        """Conta linhas efetivas (sem docstrings e linhas em branco)."""
+    # -------------------------------------------------------------------------
+    # Utilidades de AST
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def _end_lineno(node: ast.AST) -> int:
+        end = getattr(node, "end_lineno", None)
+        if end is not None:
+            return end
+        if hasattr(node, "body") and node.body:
+            return ViolationsAnalyzer._end_lineno(node.body[-1])
+        return getattr(node, "lineno", 0)
+
+    @staticmethod
+    def _collect_docstring_ranges(tree: ast.AST) -> Iterable[Tuple[int, int]]:
+        targets = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)
+        for node in ast.walk(tree):
+            if isinstance(node, targets):
+                body = getattr(node, "body", [])
+                if not body:
+                    continue
+                first = body[0]
+                if isinstance(first, ast.Expr) and isinstance(
+                    first.value, (ast.Str, ast.Constant)
+                ):
+                    value = (
+                        first.value.s
+                        if isinstance(first.value, ast.Str)
+                        else first.value.value
+                    )
+                    if isinstance(value, str):
+                        start = getattr(first, "lineno", None)
+                        end = getattr(first, "end_lineno", None) or start
+                        if start is not None:
+                            yield (start, end)
+
+    def _python_docstring_lines(self, tree: ast.AST) -> set[int]:
+        lines: set[int] = set()
+        for start, end in self._collect_docstring_ranges(tree):
+            lines.update(range(start, end + 1))
+        return lines
+
+    def _effective_python_lines(self, file_path: Path, tree: ast.AST) -> int:
+        doc_lines = self._python_docstring_lines(tree)
+        count = 0
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-
-            if file_type == "python":
-                # Remove docstrings e linhas em branco para Python
-                effective_lines = []
-                in_docstring = False
-
-                for line in lines:
-                    stripped = line.strip()
-
-                    # Detecta início/fim de docstring
-                    if stripped.startswith('"""') or stripped.startswith("'''"):
-                        if not in_docstring and not (
-                            stripped.endswith('"""') or stripped.endswith("'''")
-                        ):
-                            in_docstring = True
+            with open(file_path, "r", encoding="utf-8") as fh:
+                for idx, raw in enumerate(fh, 1):
+                    stripped = raw.strip()
+                    if not stripped or stripped.startswith("#"):
                         continue
-                    elif in_docstring and (
-                        stripped.endswith('"""') or stripped.endswith("'''")
-                    ):
-                        in_docstring = False
+                    if idx in doc_lines:
                         continue
+                    count += 1
+        except OSError as exc:
+            logger.warning("Falha ao ler %s: %s", file_path, exc)
+            return 0
+        return count
 
-                    # Pula linhas em branco e comentários
-                    if not in_docstring and stripped and not stripped.startswith("#"):
-                        effective_lines.append(line)
+    def _gather_functions(self, tree: ast.AST) -> List[_FunctionInfo]:
+        functions: List[_FunctionInfo] = []
 
-                effective_count = len(effective_lines)
-                if effective_count == 0:
-                    # Fallback: conta linhas não vazias (para arquivos com só docstrings/comentários)
-                    non_empty = len([line for line in lines if line.strip()])
-                    return non_empty
-                return effective_count
+        class Visitor(ast.NodeVisitor):
+            def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+                length = ViolationsAnalyzer._end_lineno(node) - node.lineno + 1
+                functions.append(_FunctionInfo(node.name or "<lambda>", length))
+                self.generic_visit(node)
 
-            else:
-                # Para outros tipos, conta todas as linhas não vazias
-                return len([line for line in lines if line.strip()])
+            visit_AsyncFunctionDef = visit_FunctionDef
 
-        except Exception as e:
-            print(f"Erro ao ler arquivo {file_path}: {e}")
+        Visitor().visit(tree)
+        return functions
+
+    def _gather_classes(self, tree: ast.AST) -> List[_ClassInfo]:
+        classes: List[_ClassInfo] = []
+
+        class Visitor(ast.NodeVisitor):
+            def visit_ClassDef(self, node: ast.ClassDef) -> None:
+                length = ViolationsAnalyzer._end_lineno(node) - node.lineno + 1
+                classes.append(_ClassInfo(node.name, length))
+                self.generic_visit(node)
+
+        Visitor().visit(tree)
+        return classes
+
+    # -------------------------------------------------------------------------
+    # Análise de arquivos
+    # -------------------------------------------------------------------------
+
+    def _count_html_lines(self, file_path: Path) -> int:
+        try:
+            with open(file_path, "r", encoding="utf-8") as fh:
+                return sum(1 for line in fh if line.strip())
+        except OSError as exc:
+            logger.warning("Falha ao ler template %s: %s", file_path, exc)
             return 0
 
-    def count_class_lines(self, file_path: Path) -> List[Tuple[str, int]]:
-        """Conta linhas de cada classe no arquivo Python."""
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-
-            classes = []
-            current_class = None
-            class_start = 0
-            indent_level = 0
-
-            for i, line in enumerate(lines):
-                stripped = line.strip()
-                if stripped.startswith("class ") and ":" in stripped:
-                    if current_class:
-                        classes.append((current_class, i - class_start))
-                    current_class = stripped.split(":")[0].replace("class ", "")
-                    class_start = i
-                    indent_level = len(line) - len(line.lstrip())
-                elif (
-                    current_class
-                    and line.strip()
-                    and not line.startswith(" " * (indent_level + 1))
-                ):
-                    if not stripped.startswith("#"):
-                        classes.append((current_class, i - class_start))
-                        current_class = None
-
-            if current_class:
-                classes.append((current_class, len(lines) - class_start))
-
-            return classes
-        except Exception as e:
-            print(f"Erro ao analisar classes em {file_path}: {e}")
-            return []
-
-    def count_function_lines(self, file_path: Path) -> List[Tuple[str, int]]:
-        """Conta linhas de cada função no arquivo Python."""
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-
-            functions = []
-            current_function = None
-            function_start = 0
-            indent_level = 0
-
-            for i, line in enumerate(lines):
-                stripped = line.strip()
-                if (
-                    stripped.startswith("def ") or stripped.startswith("async def ")
-                ) and ":" in stripped:
-                    if current_function:
-                        functions.append((current_function, i - function_start))
-                    current_function = (
-                        stripped.split("(")[0]
-                        .replace("def ", "")
-                        .replace("async def ", "")
-                    )
-                    function_start = i
-                    indent_level = len(line) - len(line.lstrip())
-                elif (
-                    current_function
-                    and line.strip()
-                    and not line.startswith(" " * (indent_level + 1))
-                ):
-                    if (
-                        not stripped.startswith("#")
-                        and not stripped.startswith('"""')
-                        and not stripped.startswith("'''")
-                    ):
-                        functions.append((current_function, i - function_start))
-                        current_function = None
-
-            if current_function:
-                functions.append((current_function, len(lines) - function_start))
-
-            return functions
-        except Exception as e:
-            print(f"Erro ao analisar funções em {file_path}: {e}")
-            return []
-
-    def categorize_file(self, file_path: Path) -> str:
-        """Categoriza o arquivo baseado no seu caminho e nome."""
-        path_str = str(file_path).lower()
-
-        # Categorização baseada no caminho
-        if "admin" in path_str:
-            return "Views Admin"
-        elif "blueprint" in path_str:
-            if "integrations" in path_str:
-                return "Blueprint Crítico"
-            elif "payments" in path_str:
-                return "Blueprint Pagamentos"
-            else:
-                return "Blueprint"
-        elif "templates" in path_str:
-            if "manage_product_links" in path_str:
-                return "Template Crítico"
-            elif "base.html" in path_str:
-                return "Template Base"
-            else:
-                return "Template"
-        elif file_path.name in ["stock_updater_mlb.py", "mlb_clone_backend.py"]:
-            return "Arquivo Crítico"
-        else:
-            return "Arquivo Padrão"
+    def _apply_threshold(
+        self,
+        result: Dict[str, object],
+        kind: str,
+        name: str,
+        value: int,
+    ) -> None:
+        limits = self.limits.get(kind)
+        if not limits:
+            return
+        label = kind.split("_")[-1]
+        if value > limits["red"]:
+            result["violations"].append(
+                f"{label} {name}: {value} linhas (limite: {limits['red']})"
+            )
+            result["priority"] = "high"
+        elif value > limits["yellow"]:
+            result["violations"].append(
+                f"{label} {name}: {value} linhas (limite: {limits['yellow']})"
+            )
+            if result["priority"] == "low":
+                result["priority"] = "medium"
 
     def check_file(self, file_path: Path) -> Dict:
-        """Verifica um arquivo específico."""
-        result = {
-            "file": str(file_path.relative_to(self.project_path)),
-            "type": "Unknown",
-            "lines": 0,
+        """Analisa um arquivo individual e retorna o resultado."""
+        result: Dict[str, object] = {
+            "file": self.relpath(file_path),
             "violations": [],
             "priority": "low",
-            "category": self.categorize_file(file_path),
+            "type": "Unknown",
+            "lines": 0,
         }
 
         if file_path.suffix == ".py":
             result["type"] = "Python"
-            result["lines"] = self.count_effective_lines(file_path, "python")
-
-            # Verifica limites do módulo
-            if result["lines"] > self.limits["python_module"]["red"]:
-                result["violations"].append(
-                    f"módulo: {result['lines']} linhas (limite: {self.limits['python_module']['red']})"
-                )
-                result["priority"] = "high"
-            elif result["lines"] > self.limits["python_module"]["yellow"]:
-                result["violations"].append(
-                    f"módulo: {result['lines']} linhas (limite: {self.limits['python_module']['yellow']})"
-                )
+            try:
+                with open(file_path, "r", encoding="utf-8") as fh:
+                    source = fh.read()
+                tree = ast.parse(source, filename=str(file_path))
+            except (OSError, SyntaxError) as exc:
+                logger.warning("Falha ao analisar %s: %s", file_path, exc)
+                result["violations"].append(f"Falha ao analisar AST: {exc}")
                 result["priority"] = "medium"
+                return result
 
-            # Verifica classes
-            classes = self.count_class_lines(file_path)
-            for class_name, class_lines in classes:
-                if class_lines > self.limits["python_class"]["red"]:
-                    result["violations"].append(
-                        f"class {class_name}: {class_lines} linhas (limite: {self.limits['python_class']['red']})"
-                    )
-                    result["priority"] = "high"
-                elif class_lines > self.limits["python_class"]["yellow"]:
-                    result["violations"].append(
-                        f"class {class_name}: {class_lines} linhas (limite: {self.limits['python_class']['yellow']})"
-                    )
-                    if result["priority"] == "low":
-                        result["priority"] = "medium"
+            module_lines = self._effective_python_lines(file_path, tree)
+            result["lines"] = module_lines
 
-            # Verifica funções
-            functions = self.count_function_lines(file_path)
-            for func_name, func_lines in functions:
-                if func_lines > self.limits["python_function"]["red"]:
-                    result["violations"].append(
-                        f"function {func_name}: {func_lines} linhas (limite: {self.limits['python_function']['red']})"
-                    )
-                    result["priority"] = "high"
-                elif func_lines > self.limits["python_function"]["yellow"]:
-                    result["violations"].append(
-                        f"function {func_name}: {func_lines} linhas (limite: {self.limits['python_function']['yellow']})"
-                    )
-                    if result["priority"] == "low":
-                        result["priority"] = "medium"
+            for info in self._gather_functions(tree):
+                self._apply_threshold(result, "python_function", info.name, info.length)
+
+            for cls in self._gather_classes(tree):
+                self._apply_threshold(result, "python_class", cls.name, cls.length)
+
+            self._apply_threshold(result, "python_module", "module", module_lines)
 
         elif file_path.suffix == ".html":
             result["type"] = "HTML Template"
-            result["lines"] = self.count_effective_lines(file_path, "html")
+            template_lines = self._count_html_lines(file_path)
+            result["lines"] = template_lines
+            self._apply_threshold(result, "html_template", "template", template_lines)
 
-            if result["lines"] > self.limits["html_template"]["red"]:
-                result["violations"].append(
-                    f"template: {result['lines']} linhas (limite: {self.limits['html_template']['red']})"
-                )
-                result["priority"] = "high"
-            elif result["lines"] > self.limits["html_template"]["yellow"]:
-                result["violations"].append(
-                    f"template: {result['lines']} linhas (limite: {self.limits['html_template']['yellow']})"
-                )
-                result["priority"] = "medium"
+        else:
+            result["type"] = file_path.suffix or "Unknown"
 
         return result
 
-    def should_skip_file(self, file_path: Path) -> bool:
-        """Verifica se o arquivo deve ser ignorado."""
-        default_patterns = [
-            ".git",
-            "__pycache__",
-            ".pytest_cache",
-            "node_modules",
-            ".venv",
-            "venv",
-            ".env",
-            "migrations",
-            ".ruff_cache",
-            "tests",
-            "scripts",
-            "reports",
-            "dist",
-            "build",
-            "site-packages",
-            ".tox",
-            ".nox",
-        ]
-        skip_patterns = [] if self.no_default_excludes else default_patterns
-        # Add user-defined exclude dirs (strings). Match by substring like defaults.
-        skip_patterns.extend(self.user_exclude_dirs)
-
-        path_str = str(file_path)
-        return any(pattern in path_str for pattern in skip_patterns)
+    # -------------------------------------------------------------------------
+    # Execução geral
+    # -------------------------------------------------------------------------
 
     def analyze(self) -> Dict:
-        """Executa a análise completa de violações.
+        """Executa a análise completa de violações."""
+        all_results: List[Dict] = []
+        violations: List[Dict] = []
+        warnings: List[Dict] = []
 
-        Returns:
-            dict: Relatório completo com violações encontradas
-        """
-        all_results = []
-        violations = []
-        warnings = []
-
-        # Processa arquivos Python
-        for py_file in self.project_path.rglob("*.py"):
-            if self.should_skip_file(py_file):
+        for py_file in self.iter_files(self.PYTHON_PATTERNS):
+            if self.should_skip(py_file):
                 continue
-
             result = self.check_file(py_file)
             all_results.append(result)
 
@@ -317,11 +234,9 @@ class ViolationsAnalyzer:
                 else:
                     warnings.append(result)
 
-        # Processa templates HTML
-        for html_file in self.project_path.rglob("*.html"):
-            if self.should_skip_file(html_file):
+        for html_file in self.iter_files(self.TEMPLATE_PATTERNS):
+            if self.should_skip(html_file):
                 continue
-
             result = self.check_file(html_file)
             all_results.append(result)
 
@@ -331,7 +246,6 @@ class ViolationsAnalyzer:
                 else:
                     warnings.append(result)
 
-        # Gera estatísticas
         stats = {
             "total_files": len(all_results),
             "violation_files": len(violations),
@@ -340,8 +254,12 @@ class ViolationsAnalyzer:
             "medium_priority": len(
                 [v for v in violations + warnings if v["priority"] == "medium"]
             ),
-            "python_files": len([r for r in all_results if r["type"] == "Python"]),
-            "html_files": len([r for r in all_results if r["type"] == "HTML Template"]),
+            "python_files": len(
+                [r for r in all_results if r.get("type") == "Python"]
+            ),
+            "html_files": len(
+                [r for r in all_results if r.get("type") == "HTML Template"]
+            ),
         }
 
         return {
@@ -357,12 +275,10 @@ class ViolationsAnalyzer:
             "statistics": stats,
         }
 
-    def save_report(self, report: Dict, output_file: str):
-        """Salva o relatório em arquivo JSON.
+    def save_report(self, report: Dict, output_file: str) -> None:
+        """Salva o relatório em arquivo JSON."""
+        with open(output_file, "w", encoding="utf-8") as fh:
+            json.dump(report, fh, indent=2, ensure_ascii=False)
 
-        Args:
-            report (dict): Relatório gerado pela análise
-            output_file (str): Caminho do arquivo de saída
-        """
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(report, f, indent=2, ensure_ascii=False)
+
+__all__ = ["ViolationsAnalyzer"]

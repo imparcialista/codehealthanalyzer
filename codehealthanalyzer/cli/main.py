@@ -4,6 +4,7 @@ Este módulo fornece uma CLI amigável para usar a biblioteca CodeHealthAnalyzer
 """
 
 import json
+import logging
 import shutil
 import subprocess  # nosec B404
 from pathlib import Path
@@ -19,6 +20,18 @@ from ..reports.formatter import ReportFormatter
 from ..reports.generator import ReportGenerator
 from ..utils.helpers import ColorHelper
 from ..utils.validators import PathValidator
+
+_LOG_FORMAT = "%(levelname)s:%(name)s:%(message)s"
+
+
+def _configure_logging(verbose: bool = False) -> None:
+    """Configura logging para os analisadores."""
+    level = logging.INFO if verbose else logging.WARNING
+    root = logging.getLogger()
+    if not root.handlers:
+        logging.basicConfig(level=level, format=_LOG_FORMAT)
+    else:
+        root.setLevel(level)
 
 
 @click.group()
@@ -79,6 +92,8 @@ def analyze(
 
     PROJECT_PATH: Caminho para o diretório do projeto
     """
+    _configure_logging(verbose)
+
     if verbose:
         click.echo(ColorHelper.info(f"Iniciando análise de {project_path}"))
 
@@ -231,6 +246,7 @@ def analyze(
     is_flag=True,
     help="Não aplicar exclusões padrão (tests, scripts, reports, venv, etc.)",
 )
+@click.option("--verbose", "-v", is_flag=True, help="Saída detalhada")
 def violations(
     project_path: str,
     output: Optional[str],
@@ -238,11 +254,14 @@ def violations(
     no_json: bool,
     config: Optional[str],
     no_default_excludes: bool,
+    verbose: bool,
 ):
     """Analisa apenas violações de tamanho.
 
     PROJECT_PATH: Caminho para o diretório do projeto
     """
+    _configure_logging(verbose)
+
     config_data = {}
     if config:
         try:
@@ -280,6 +299,7 @@ def violations(
             click.echo(ColorHelper.success(f"Relatório Markdown salvo em {md_file}"))
 
     except Exception as e:
+        logging.exception("Falha ao gerar relatório de violações.")
         click.echo(ColorHelper.error(f"Erro: {e}"))
 
 
@@ -309,6 +329,7 @@ def violations(
     is_flag=True,
     help="Não aplicar exclusões padrão (tests, scripts, reports, venv, etc.)",
 )
+@click.option("--verbose", "-v", is_flag=True, help="Saída detalhada")
 def templates(
     project_path: str,
     output: Optional[str],
@@ -316,11 +337,14 @@ def templates(
     no_json: bool,
     config: Optional[str],
     no_default_excludes: bool,
+    verbose: bool,
 ):
     """Analisa apenas templates HTML com CSS/JS inline.
 
     PROJECT_PATH: Caminho para o diretório do projeto
     """
+    _configure_logging(verbose)
+
     config_data = {}
     if config:
         try:
@@ -365,6 +389,7 @@ def templates(
             click.echo(ColorHelper.success(f"Relatório Markdown salvo em {md_file}"))
 
     except Exception as e:
+        logging.exception("Falha ao gerar relatório de templates.")
         click.echo(ColorHelper.error(f"Erro: {e}"))
 
 
@@ -394,6 +419,7 @@ def templates(
     is_flag=True,
     help="Não aplicar exclusões padrão (tests, scripts, reports, venv, etc.)",
 )
+@click.option("--verbose", "-v", is_flag=True, help="Saída detalhada")
 def errors(
     project_path: str,
     output: Optional[str],
@@ -401,11 +427,14 @@ def errors(
     no_json: bool,
     config: Optional[str],
     no_default_excludes: bool,
+    verbose: bool,
 ):
     """Analisa apenas erros de linting (Ruff).
 
     PROJECT_PATH: Caminho para o diretório do projeto
     """
+    _configure_logging(verbose)
+
     config_data = {}
     if config:
         try:
@@ -441,6 +470,7 @@ def errors(
             click.echo(ColorHelper.success(f"Relatório Markdown salvo em {md_file}"))
 
     except Exception as e:
+        logging.exception("Falha ao gerar relatório de erros.")
         click.echo(ColorHelper.error(f"Erro: {e}"))
 
 

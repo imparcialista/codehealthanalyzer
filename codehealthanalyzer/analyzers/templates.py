@@ -5,13 +5,18 @@ que podem ser extraídos para arquivos externos.
 """
 
 import json
+import logging
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .base import BaseAnalyzer
 
-class TemplatesAnalyzer:
+logger = logging.getLogger(__name__)
+
+
+class TemplatesAnalyzer(BaseAnalyzer):
     """Analisador de templates HTML.
 
     Args:
@@ -20,8 +25,8 @@ class TemplatesAnalyzer:
     """
 
     def __init__(self, project_path: str, config: dict = None):
-        self.project_path = Path(project_path)
-        self.config = config or {}
+        super().__init__(project_path, config)
+        self.config = self.config or {}
         # Permite configurar diretórios de templates via config['templates_dir']
         configured = self.config.get("templates_dir")
         paths: List[Path] = []
@@ -37,9 +42,6 @@ class TemplatesAnalyzer:
                 self.project_path / "cha" / "templates",
             ]
         self.templates_paths = [p for p in paths]
-        # Exclusions
-        self.no_default_excludes = bool(self.config.get("no_default_excludes", False))
-        self.user_exclude_dirs = list(self.config.get("exclude_dirs", []))
 
         self.results = []
 
@@ -126,7 +128,7 @@ class TemplatesAnalyzer:
             return analysis
 
         except Exception as e:
-            print(f"Erro ao analisar {file_path}: {e}")
+            logger.warning("Erro ao analisar %s: %s", file_path, e)
             relative_file = self._get_relative_path(file_path, base_dir)
             return {
                 "file": relative_file,
@@ -295,27 +297,8 @@ class TemplatesAnalyzer:
         return recommendations
 
     def _should_skip_file(self, file_path: Path) -> bool:
-        """Verifica se o arquivo deve ser ignorado."""
-        default_patterns = [
-            "__pycache__",
-            ".git",
-            "node_modules",
-            ".ruff_cache",
-            "tests",
-            "scripts",
-            "reports",
-            "dist",
-            "build",
-            "site-packages",
-            ".tox",
-            ".nox",
-            ".venv",
-            "venv",
-        ]
-        skip_patterns = [] if self.no_default_excludes else default_patterns
-        skip_patterns.extend(self.user_exclude_dirs)
-        path_str = str(file_path)
-        return any(pattern in path_str for pattern in skip_patterns)
+        """Compatibilidade retroativa; delega para BaseAnalyzer."""
+        return self.should_skip(file_path)
 
     def analyze(self) -> Dict:
         """Executa a análise completa de templates.
