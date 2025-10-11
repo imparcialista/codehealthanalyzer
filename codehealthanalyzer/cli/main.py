@@ -111,6 +111,14 @@ def analyze(
     if no_default_excludes:
         config_data["no_default_excludes"] = True
 
+    # Adiciona diretórios de templates padrão se não configurados
+    if "templates_dir" not in config_data:
+        config_data["templates_dir"] = [
+            "templates",
+            "cha/templates",
+            "codehealthanalyzer/web/templates",
+        ]
+
     # Executa análise
     try:
         analyzer = CodeAnalyzer(project_path, config_data)
@@ -320,6 +328,17 @@ def templates(
                 config_data = json.load(f)
         except Exception as e:
             click.echo(ColorHelper.warning(f"Erro ao carregar configuração: {e}"))
+
+    if no_default_excludes:
+        config_data["no_default_excludes"] = True
+
+    # Adiciona diretórios de templates padrão se não configurados
+    if "templates_dir" not in config_data:
+        config_data["templates_dir"] = [
+            "templates",
+            "cha/templates",
+            "codehealthanalyzer/web/templates",
+        ]
 
     try:
         analyzer = TemplatesAnalyzer(project_path, config_data)
