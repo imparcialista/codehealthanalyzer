@@ -41,7 +41,7 @@ if requirements_file.exists():
 
 setup(
     name="codehealthanalyzer",
-    version="1.1.3",
+    version="1.1.7",
     author="Luarco Team",
     author_email="contato@luarco.com.br",
     description="Biblioteca Python para análise de qualidade e saúde de código",
