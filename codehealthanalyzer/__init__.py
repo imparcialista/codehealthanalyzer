@@ -12,7 +12,7 @@ Exemplo de uso:
     print(report.summary())
 """
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 __author__ = "Imparcialista Team"
 __email__ = "contato@luarco.com.br"
 __description__ = "Biblioteca Python para análise de qualidade e saúde de código"
