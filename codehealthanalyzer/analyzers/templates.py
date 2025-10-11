@@ -8,7 +8,7 @@ import json
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class TemplatesAnalyzer:
@@ -43,7 +43,36 @@ class TemplatesAnalyzer:
 
         self.results = []
 
-    def analyze_file(self, file_path: Path) -> Dict[str, Any]:
+    def _get_relative_path(
+        self, file_path: Path, base_dir: Optional[Path] = None
+    ) -> str:
+        """Retorna um caminho relativo estável para o relatório."""
+        candidates = []
+        if base_dir is not None:
+            candidates.append(base_dir)
+        candidates.extend(self.templates_paths)
+        candidates.append(self.project_path)
+
+        try:
+            file_resolved = file_path.resolve()
+        except OSError:
+            file_resolved = file_path
+
+        for candidate in candidates:
+            try:
+                candidate_resolved = candidate.resolve()
+            except OSError:
+                candidate_resolved = candidate
+            try:
+                return str(file_resolved.relative_to(candidate_resolved))
+            except ValueError:
+                continue
+
+        return file_path.name
+
+    def analyze_file(
+        self, file_path: Path, base_dir: Optional[Path] = None
+    ) -> Dict[str, Any]:
         """Analisa um arquivo HTML em busca de CSS inline e JavaScript."""
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -53,7 +82,7 @@ class TemplatesAnalyzer:
             content_clean = re.sub(r"<!--.*?-->", "", content, flags=re.DOTALL)
 
             analysis = {
-                "file": str(file_path.relative_to(self.templates_paths[0])),
+                "file": self._get_relative_path(file_path, base_dir),
                 "css_inline": self._extract_css_inline(content_clean),
                 "css_style_tags": self._extract_style_tags(content_clean),
                 "js_inline": self._extract_js_inline(content_clean),
@@ -98,8 +127,9 @@ class TemplatesAnalyzer:
 
         except Exception as e:
             print(f"Erro ao analisar {file_path}: {e}")
+            relative_file = self._get_relative_path(file_path, base_dir)
             return {
-                "file": str(file_path.relative_to(self.templates_paths[0])),
+                "file": relative_file,
                 "css_inline": [],
                 "css_style_tags": [],
                 "js_inline": [],
@@ -305,7 +335,7 @@ class TemplatesAnalyzer:
             for html_file in base.rglob("*.html"):
                 if self._should_skip_file(html_file):
                     continue
-                analysis = self.analyze_file(html_file)
+                analysis = self.analyze_file(html_file, base)
                 if analysis["total_css_chars"] > 0 or analysis["total_js_chars"] > 0:
                     results.append(analysis)
 
