@@ -5,35 +5,25 @@ from io import StringIO
 from pathlib import Path
 from typing import Any, Dict
 
-import jinja2
-
 from ..utils.helpers import FileHelper
-from .report import Report
 
 
 class ReportFormatter:
-    """Formatadores para JSON, Markdown, CSV e HTML."""
+    """Formatadores para JSON, Markdown e CSV."""
 
-    def __init__(self):
-        template_dir = Path(__file__).parent / "templates"
-        self.jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir))
 
-    def to_json(self, report: Report, output_file: str) -> bool:
-        return FileHelper.write_json(report.to_dict(), output_file)
+    def to_json(self, report: Dict[str, Any], output_file: str) -> bool:
+        return FileHelper.write_json(report, output_file)
 
-    def to_html(self, report: Report, output_file: str) -> str:
-        """Gera um relatório HTML a partir de um objeto Report."""
-        template = self.jinja_env.get_template("report.html")
-        html_content = template.render(report=report)
-        Path(output_file).write_text(html_content, encoding="utf-8")
-        return html_content
 
-    def to_markdown(self, report: Report, output_file: str) -> str:
+    def to_markdown(self, report: Dict[str, Any], output_file: str) -> str:
         md = StringIO()
-        s = report.summary
+        s = report.get("summary", {})
+
 
         md.write("# Relatório - CodeHealthAnalyzer\n\n")
-        md.write(f"**Gerado em:** {report.metadata.get('generated_at', '')}\n\n")
+        md.write(f"**Gerado em:** {report.get('metadata', {}).get('generated_at', '')}\n\n")
+
 
         # Resumo
         md.write("## Resumo\n\n")
@@ -45,9 +35,10 @@ class ReportFormatter:
         md.write(f"| Templates | {s.get('total_templates', 0)} |\n")
         md.write(f"| Erros Ruff | {s.get('total_errors', 0)} |\n\n")
 
+
         # Prioridades
         md.write("## Prioridades de Ação\n\n")
-        priorities = report.priorities
+        priorities = report.get("priorities", [])
         if priorities:
             for p in priorities:
                 md.write(f"- {p.get('title','N/A')} ({p.get('count', 0)})\n")
@@ -55,11 +46,14 @@ class ReportFormatter:
             md.write("- Nenhuma ação urgente necessária\n")
         md.write("\n")
 
+
         # Violações (consolidado)
         md.write("## Arquivos com Violações\n\n")
         md.write("| Arquivo | Prioridade | Qtd. Violações | Linhas |\n")
         md.write("|---|---|---:|---:|\n")
-        vio = (report.violations.get("violations", []) or []) + (report.violations.get("warnings", []) or [])
+        vio = (report.get("violations", {}).get("violations", []) or []) + (
+            report.get("violations", {}).get("warnings", []) or []
+        )
         if vio:
             for it in vio:
                 md.write(
@@ -69,11 +63,12 @@ class ReportFormatter:
             md.write("| _Sem registros_ |  |  |  |\n")
         md.write("\n")
 
+
         # Erros (Ruff)
         md.write("## Erros (Ruff)\n\n")
         md.write("| Arquivo | Categoria | Prioridade | Qtd. Erros |\n")
         md.write("|---|---|---|---:|\n")
-        errs = report.errors.get("errors", []) or []
+        errs = report.get("errors", {}).get("errors", []) or []
         if errs:
             for f in errs:
                 md.write(
@@ -83,11 +78,12 @@ class ReportFormatter:
             md.write("| _Sem registros_ |  |  |  |\n")
         md.write("\n")
 
+
         # Templates
         md.write("## Templates\n\n")
         md.write("| Arquivo | Categoria | Prioridade | CSS (chars) | JS (chars) |\n")
         md.write("|---|---|---|---:|---:|\n")
-        tmpls = report.templates.get("templates", []) or []
+        tmpls = report.get("templates", {}).get("templates", []) or []
         if tmpls:
             for t in tmpls:
                 css_chars = t.get('total_css_chars', t.get('css', 0))
@@ -99,13 +95,15 @@ class ReportFormatter:
             md.write("| _Sem registros_ |  |  |  |  |\n")
         md.write("\n")
 
+
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         Path(output_file).write_text(md.getvalue(), encoding="utf-8")
         return md.getvalue()
 
-    def to_csv(self, report: Report, output_file: str) -> None:
+
+    def to_csv(self, report: Dict[str, Any], output_file: str) -> None:
         rows = []
-        for item in report.violations.get("violations", []):
+        for item in report.get("violations", {}).get("violations", []):
             rows.append(
                 {
                     "type": "violation",
@@ -122,8 +120,8 @@ class ReportFormatter:
             for r in rows:
                 writer.writerow(r)
 
-    def generate_summary_table(self, report: Report) -> str:
-        s = report.summary
+    def generate_summary_table(self, report: Dict[str, Any]) -> str:
+        s = report.get("summary", {})
         lines = [
             "+-------------------------+---------+",
             f"| Score de Qualidade      | {s.get('quality_score', 0):>7} |",

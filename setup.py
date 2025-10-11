@@ -41,7 +41,7 @@ if requirements_file.exists():
 
 setup(
     name="codehealthanalyzer",
-    version="1.2.0",
+    version="1.1.1",
     author="Luarco Team",
     author_email="contato@luarco.com.br",
     description="Biblioteca Python para análise de qualidade e saúde de código",
@@ -63,11 +63,11 @@ setup(
         "Programming Language :: Python :: 3.12",
     ],
     python_requires=">=3.8",
-    install_requires=[
+    install_requires=requirements
+    or [
         "ruff>=0.1.0",
         "click>=8.0.0",
         "rich>=12.0.0",
-        "jinja2>=3.1.0",
     ],
     extras_require={
         "dev": [
@@ -86,6 +86,7 @@ setup(
         "web": [
             "fastapi>=0.104.0",
             "uvicorn[standard]>=0.24.0",
+            "jinja2>=3.1.0",
             "python-multipart>=0.0.6",
             "websockets>=12.0",
         ],

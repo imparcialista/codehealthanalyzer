@@ -24,9 +24,6 @@ from .reports.generator import ReportGenerator
 from .utils.categorizer import Categorizer
 
 
-from .reports.report import Report
-
-
 # Classe principal da biblioteca
 class CodeAnalyzer:
     """Classe principal para análise de código.
@@ -60,35 +57,40 @@ class CodeAnalyzer:
         """Analisa erros do Ruff e outras ferramentas de linting."""
         return self.errors_analyzer.analyze()
 
-    def generate_full_report(self, output_dir: str = None) -> Report:
+    def generate_full_report(self, output_dir: str = None):
         """Gera relatório completo com todas as análises.
 
         Args:
             output_dir (str, optional): Diretório para salvar os relatórios
 
         Returns:
-            Report: Objeto de relatório completo com todas as análises
+            dict: Relatório completo com todas as análises
         """
         violations = self.analyze_violations()
         templates = self.analyze_templates()
         errors = self.analyze_errors()
 
-        report = self.report_generator.generate_full_report(
+        return self.report_generator.generate_full_report(
             violations=violations,
             templates=templates,
             errors=errors,
             output_dir=output_dir,
         )
-        return report
 
-    def get_quality_score(self) -> int:
+    def get_quality_score(self):
         """Calcula o score de qualidade do código (0-100).
 
         Returns:
             int: Score de qualidade entre 0 e 100
         """
-        report = self.generate_full_report()
-        return report.quality_score
+        violations = self.analyze_violations()
+        templates = self.analyze_templates()
+        errors = self.analyze_errors()
+
+        return self.report_generator.calculate_quality_score(
+            violations, templates, errors
+        )
+
 
 # Exporta as classes principais
 __all__ = [

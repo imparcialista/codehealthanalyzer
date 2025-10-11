@@ -119,11 +119,11 @@ def analyze(
             click.echo("Executando análise...")
 
         # Gera relatório em memória (salvamento tratado abaixo)
-        report = analyzer.generate_full_report(output_dir=output)
+        report = analyzer.generate_full_report()
 
         # Exibe resumo
-        summary = report.summary
-        quality_score = report.quality_score
+        summary = report.get("summary", {})
+        quality_score = summary.get("quality_score", 0)
 
         click.echo("\n" + "=" * 50)
         click.echo("RESUMO DA ANÁLISE")
@@ -147,7 +147,7 @@ def analyze(
         )
 
         # Prioridades de ação
-        priorities = report.priorities
+        priorities = report.get("priorities", [])
         if priorities:
             click.echo("\nPRIORIDADES DE AÇÃO:")
             for i, priority in enumerate(priorities[:5], 1):  # Top 5
@@ -168,14 +168,14 @@ def analyze(
         # Sempre gerar JSON por padrão, a menos que o usuário desabilite
         if not no_json:
             json_file = output_path / "full_report.json"
-            formatter.to_json(report.to_dict(), str(json_file))
+            formatter.to_json(report, str(json_file))
             if verbose:
                 click.echo(ColorHelper.success(f"Relatório JSON salvo em {json_file}"))
 
         # Gerar formatos adicionais conforme solicitado
         if format in ["html", "all"]:
             html_file = output_path / "report.html"
-            formatter.to_html(report, str(html_file))
+            ReportGenerator().generate_html_report(report, str(html_file))
             if verbose:
                 click.echo(ColorHelper.success(f"Relatório HTML salvo em {html_file}"))
 
@@ -186,8 +186,6 @@ def analyze(
                 click.echo(
                     ColorHelper.success(f"Relatório Markdown salvo em {md_file}")
                 )
-
-
 
         click.echo("\n" + ColorHelper.success("Análise concluída com sucesso!"))
 
