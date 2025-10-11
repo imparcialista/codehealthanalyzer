@@ -5,7 +5,7 @@ Este módulo fornece uma CLI amigável para usar a biblioteca CodeHealthAnalyzer
 
 import json
 import shutil
-import subprocess
+import subprocess  # nosec B404
 from pathlib import Path
 from typing import Optional
 
@@ -590,7 +590,7 @@ def format(project_path: str, ruff: bool, use_isort: bool, use_black: bool):
 
     def _run(cmd):
         click.echo(" ".join(cmd))
-        return subprocess.run(cmd, cwd=project_path).returncode
+        return subprocess.run(cmd, cwd=project_path).returncode  # nosec B603
 
     rc = 0
     if use_isort:
@@ -695,7 +695,7 @@ def lint(project_path: str):
                 )
             )
             return 0
-        return subprocess.run(cmd, cwd=project_path).returncode
+        return subprocess.run(cmd, cwd=project_path).returncode  # nosec B603
 
     rc = 0
     rc |= _run("Ruff (lint)", ["ruff", "check", project_path])

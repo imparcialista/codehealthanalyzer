@@ -11,19 +11,17 @@ from ..utils.helpers import FileHelper
 class ReportFormatter:
     """Formatadores para JSON, Markdown e CSV."""
 
-
     def to_json(self, report: Dict[str, Any], output_file: str) -> bool:
         return FileHelper.write_json(report, output_file)
-
 
     def to_markdown(self, report: Dict[str, Any], output_file: str) -> str:
         md = StringIO()
         s = report.get("summary", {})
 
-
         md.write("# Relatório - CodeHealthAnalyzer\n\n")
-        md.write(f"**Gerado em:** {report.get('metadata', {}).get('generated_at', '')}\n\n")
-
+        md.write(
+            f"**Gerado em:** {report.get('metadata', {}).get('generated_at', '')}\n\n"
+        )
 
         # Resumo
         md.write("## Resumo\n\n")
@@ -35,7 +33,6 @@ class ReportFormatter:
         md.write(f"| Templates | {s.get('total_templates', 0)} |\n")
         md.write(f"| Erros Ruff | {s.get('total_errors', 0)} |\n\n")
 
-
         # Prioridades
         md.write("## Prioridades de Ação\n\n")
         priorities = report.get("priorities", [])
@@ -45,7 +42,6 @@ class ReportFormatter:
         else:
             md.write("- Nenhuma ação urgente necessária\n")
         md.write("\n")
-
 
         # Violações (consolidado)
         md.write("## Arquivos com Violações\n\n")
@@ -63,7 +59,6 @@ class ReportFormatter:
             md.write("| _Sem registros_ |  |  |  |\n")
         md.write("\n")
 
-
         # Erros (Ruff)
         md.write("## Erros (Ruff)\n\n")
         md.write("| Arquivo | Categoria | Prioridade | Qtd. Erros |\n")
@@ -78,7 +73,6 @@ class ReportFormatter:
             md.write("| _Sem registros_ |  |  |  |\n")
         md.write("\n")
 
-
         # Templates
         md.write("## Templates\n\n")
         md.write("| Arquivo | Categoria | Prioridade | CSS (chars) | JS (chars) |\n")
@@ -86,8 +80,8 @@ class ReportFormatter:
         tmpls = report.get("templates", {}).get("templates", []) or []
         if tmpls:
             for t in tmpls:
-                css_chars = t.get('total_css_chars', t.get('css', 0))
-                js_chars = t.get('total_js_chars', t.get('js', 0))
+                css_chars = t.get("total_css_chars", t.get("css", 0))
+                js_chars = t.get("total_js_chars", t.get("js", 0))
                 md.write(
                     f"| {t.get('file','')} | {t.get('category','')} | {t.get('priority','')} | {css_chars} | {js_chars} |\n"
                 )
@@ -95,11 +89,9 @@ class ReportFormatter:
             md.write("| _Sem registros_ |  |  |  |  |\n")
         md.write("\n")
 
-
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         Path(output_file).write_text(md.getvalue(), encoding="utf-8")
         return md.getvalue()
-
 
     def to_csv(self, report: Dict[str, Any], output_file: str) -> None:
         rows = []

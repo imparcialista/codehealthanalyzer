@@ -5,7 +5,8 @@ como Ruff e analisa os erros encontrados.
 """
 
 import json
-import subprocess
+import shutil
+import subprocess  # nosec B404
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
@@ -31,18 +32,23 @@ class ErrorsAnalyzer:
     def run_ruff_check(self) -> List[Dict]:
         """Executa ruff check e retorna os erros."""
         try:
+            ruff_executable = shutil.which("ruff")
+            if not ruff_executable:
+                print("Ruff não encontrado. Instale com: pip install ruff")
+                return []
+
             # Se habilitado na config, tenta aplicar correções automáticas
             if self.config.get("ruff_fix", False):
-                subprocess.run(
-                    ["ruff", "check", self.target_dir, "--fix"],
+                subprocess.run(  # nosec B607, B603
+                    [ruff_executable, "check", self.target_dir, "--fix"],
                     capture_output=True,
                     text=True,
                     cwd=self.project_path,
                 )
 
             # Depois, verifica erros restantes
-            result = subprocess.run(
-                ["ruff", "check", self.target_dir, "--output-format", "json"],
+            result = subprocess.run(  # nosec B607, B603
+                [ruff_executable, "check", self.target_dir, "--output-format", "json"],
                 capture_output=True,
                 text=True,
                 cwd=self.project_path,

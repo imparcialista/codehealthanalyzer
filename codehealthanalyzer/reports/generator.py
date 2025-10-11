@@ -59,17 +59,28 @@ class ReportGenerator:
 
         return report
 
-    def _generate_summary(self, violations: Dict[str, Any], templates: Dict[str, Any], errors: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_summary(
+        self,
+        violations: Dict[str, Any],
+        templates: Dict[str, Any],
+        errors: Dict[str, Any],
+    ) -> Dict[str, Any]:
         return {
             "total_files": violations.get("metadata", {}).get("total_files", 0),
             "violation_files": violations.get("metadata", {}).get("violation_files", 0),
+            "warning_files": violations.get("statistics", {}).get("warning_files", 0),
             "total_templates": templates.get("metadata", {}).get("total_templates", 0),
             "total_errors": errors.get("metadata", {}).get("total_errors", 0),
-            "high_priority_issues": violations.get("statistics", {}).get("high_priority", 0),
+            "high_priority_issues": violations.get("statistics", {}).get(
+                "high_priority", 0
+            ),
         }
 
     def calculate_quality_score(
-        self, violations: Dict[str, Any], templates: Dict[str, Any], errors: Dict[str, Any]
+        self,
+        violations: Dict[str, Any],
+        templates: Dict[str, Any],
+        errors: Dict[str, Any],
     ) -> int:
         score = 100
         score -= 10 * violations.get("statistics", {}).get("high_priority", 0)
@@ -79,31 +90,44 @@ class ReportGenerator:
 
     def generate_html_report(self, report: Dict[str, Any], output_file: str) -> str:
         # Build priorities list
-        priorities_items = "".join(
-            f"<li>{p.get('title','N/A')} ({p.get('count',0)})</li>" for p in report.get("priorities", [])
-        ) or "<li>Nenhuma ação urgente necessária</li>"
+        priorities_items = (
+            "".join(
+                f"<li>{p.get('title','N/A')} ({p.get('count',0)})</li>"
+                for p in report.get("priorities", [])
+            )
+            or "<li>Nenhuma ação urgente necessária</li>"
+        )
 
         # Violations rows (combine violations + warnings)
         vio = (report.get("violations", {}).get("violations", []) or []) + (
             report.get("violations", {}).get("warnings", []) or []
         )
-        vio_rows = "".join(
-            f"<tr><td>{it.get('file','')}</td><td>{it.get('priority','')}</td><td>{len(it.get('violations',[]))}</td><td>{it.get('lines',0)}</td></tr>"
-            for it in vio
-        ) or "<tr><td colspan='4'>Sem registros</td></tr>"
+        vio_rows = (
+            "".join(
+                f"<tr><td>{it.get('file','')}</td><td>{it.get('priority','')}</td><td>{len(it.get('violations',[]))}</td><td>{it.get('lines',0)}</td></tr>"
+                for it in vio
+            )
+            or "<tr><td colspan='4'>Sem registros</td></tr>"
+        )
 
         # Errors rows
-        err_rows = "".join(
-            f"<tr><td>{f.get('file','')}</td><td>{f.get('category','')}</td><td>{f.get('priority','')}</td><td>{f.get('error_count',0)}</td></tr>"
-            for f in report.get("errors", {}).get("errors", []) or []
-        ) or "<tr><td colspan='4'>Sem registros</td></tr>"
+        err_rows = (
+            "".join(
+                f"<tr><td>{f.get('file','')}</td><td>{f.get('category','')}</td><td>{f.get('priority','')}</td><td>{f.get('error_count',0)}</td></tr>"
+                for f in report.get("errors", {}).get("errors", []) or []
+            )
+            or "<tr><td colspan='4'>Sem registros</td></tr>"
+        )
 
         # Templates rows
         tmpls = report.get("templates", {}).get("templates", []) or []
-        tmpl_rows = "".join(
-            f"<tr><td>{t.get('file','')}</td><td>{t.get('category','')}</td><td>{t.get('priority','')}</td><td>{t.get('total_css_chars', t.get('css', 0))}</td><td>{t.get('total_js_chars', t.get('js', 0))}</td></tr>"
-            for t in tmpls
-        ) or "<tr><td colspan='5'>Sem registros</td></tr>"
+        tmpl_rows = (
+            "".join(
+                f"<tr><td>{t.get('file','')}</td><td>{t.get('category','')}</td><td>{t.get('priority','')}</td><td>{t.get('total_css_chars', t.get('css', 0))}</td><td>{t.get('total_js_chars', t.get('js', 0))}</td></tr>"
+                for t in tmpls
+            )
+            or "<tr><td colspan='5'>Sem registros</td></tr>"
+        )
 
         html = f"""
 <!DOCTYPE html>

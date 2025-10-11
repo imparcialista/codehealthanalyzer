@@ -22,6 +22,6 @@ def format(session: nox.Session) -> None:
 
 @nox.session(reuse_venv=True)
 def tests(session: nox.Session) -> None:
-    session.install("pytest", "pytest-cov")
+    session.install("pytest", "pytest-cov", "pytest-mock")
     session.install("-e", ".[web,dev]")
     session.run("pytest", "-q")

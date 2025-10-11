@@ -4,6 +4,7 @@ Este módulo fornece suporte para múltiplos idiomas na aplicação.
 """
 
 import gettext
+import logging
 import os
 from pathlib import Path
 
@@ -145,8 +146,8 @@ def detect_system_language() -> str:
             elif system_locale.startswith("en"):
                 return "en"
 
-    except Exception:
-        pass
+    except Exception as e:
+        logging.exception(f"Error loading translation: {e}")
 
     # Verificar variáveis de ambiente
     env_lang = os.environ.get("LANG", "")
