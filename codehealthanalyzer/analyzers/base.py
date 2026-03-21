@@ -71,9 +71,9 @@ class BaseAnalyzer:
     def relpath(self, path: Path) -> str:
         """Retorna caminho relativo ao projeto, com fallback seguro."""
         try:
-            return str(path.resolve().relative_to(self.project_path.resolve()))
+            return path.resolve().relative_to(self.project_path.resolve()).as_posix()
         except (ValueError, OSError):
-            return str(path)
+            return path.as_posix()
 
 
 __all__ = ["BaseAnalyzer"]

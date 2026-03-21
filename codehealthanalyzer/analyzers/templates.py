@@ -174,7 +174,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
 
         for match in re.finditer(style_pattern, content, re.IGNORECASE):
             css_content = match.group(1)
-            if len(css_content.strip()) > 20:  # Só considera estilos significativos
+            if css_content.strip():
                 line_num = content[: match.start()].count("\n") + 1
                 css_inline.append(
                     {
@@ -242,9 +242,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
 
         for match in re.finditer(script_pattern, content, re.IGNORECASE):
             js_content = match.group(1).strip()
-            if (
-                js_content and len(js_content) > 50
-            ):  # Só considera scripts significativos
+            if js_content:
                 line_num = content[: match.start()].count("\n") + 1
                 script_tags.append(
                     {
