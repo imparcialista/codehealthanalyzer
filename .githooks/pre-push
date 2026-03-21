@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# .githooks/pre-push — bloqueia push se o CI local falhar
+# Ativar com: git config core.hooksPath .githooks
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+echo "[pre-push] Executando verificação de CI local..."
+bash "$ROOT/scripts/check_ci.sh"
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "[pre-push] Push bloqueado. Corrija os erros acima antes de fazer push."
+    exit 1
+fi
