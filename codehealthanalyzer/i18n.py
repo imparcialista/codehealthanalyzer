@@ -1,11 +1,13 @@
 """Módulo de internacionalização para CodeHealthAnalyzer.
 
 Este módulo fornece suporte para múltiplos idiomas na aplicação.
+O estado de tradução é encapsulado em threading.local() para thread-safety.
 """
 
 import gettext
 import logging
 import os
+import threading
 from pathlib import Path
 
 # Idiomas suportados
@@ -14,9 +16,30 @@ SUPPORTED_LANGUAGES = {"pt_BR": "Português (Brasil)", "en": "English"}
 # Idioma padrão
 DEFAULT_LANGUAGE = "pt_BR"
 
-# Variável global para o objeto de tradução atual
-_current_translation = None
-_current_language = DEFAULT_LANGUAGE
+# Estado encapsulado por thread — elimina variáveis globais mutáveis
+_state = threading.local()
+
+
+def _get_translation() -> gettext.NullTranslations:
+    """Retorna o objeto de tradução da thread atual, inicializando se necessário."""
+    if not hasattr(_state, "translation") or _state.translation is None:
+        _state.language = DEFAULT_LANGUAGE
+        _state.translation = _load_translation(DEFAULT_LANGUAGE)
+    return _state.translation
+
+
+def _load_translation(language: str) -> gettext.NullTranslations:
+    """Carrega o objeto de tradução para o idioma dado, com fallback silencioso."""
+    try:
+        locale_dir = get_locale_dir()
+        return gettext.translation(
+            "codehealthanalyzer",
+            localedir=str(locale_dir),
+            languages=[language],
+            fallback=True,
+        )
+    except Exception:
+        return gettext.NullTranslations()
 
 
 def get_locale_dir() -> Path:
@@ -25,11 +48,9 @@ def get_locale_dir() -> Path:
     Returns:
         Path: Caminho para o diretório locale
     """
-    # Diretório locale na raiz do projeto
     current_dir = Path(__file__).parent.parent
     locale_dir = current_dir / "locale"
 
-    # Se não encontrar, tentar no diretório de instalação
     if not locale_dir.exists():
         import codehealthanalyzer
 
@@ -40,7 +61,7 @@ def get_locale_dir() -> Path:
 
 
 def set_language(language: str) -> bool:
-    """Define o idioma da aplicação.
+    """Define o idioma da thread atual.
 
     Args:
         language (str): Código do idioma (ex: 'pt_BR', 'en')
@@ -48,37 +69,34 @@ def set_language(language: str) -> bool:
     Returns:
         bool: True se o idioma foi definido com sucesso
     """
-    global _current_translation, _current_language
-
     if language not in SUPPORTED_LANGUAGES:
         return False
 
     try:
-        locale_dir = get_locale_dir()
         translation = gettext.translation(
             "codehealthanalyzer",
-            localedir=str(locale_dir),
+            localedir=str(get_locale_dir()),
             languages=[language],
             fallback=True,
         )
-
-        _current_translation = translation
-        _current_language = language
+        _state.translation = translation
+        _state.language = language
         return True
-
     except Exception:
-        # Em caso de erro, usar tradução padrão
-        _current_translation = gettext.NullTranslations()
+        _state.translation = gettext.NullTranslations()
+        _state.language = language
         return False
 
 
 def get_current_language() -> str:
-    """Retorna o idioma atual.
+    """Retorna o idioma atual da thread.
 
     Returns:
         str: Código do idioma atual
     """
-    return _current_language
+    if not hasattr(_state, "language"):
+        _get_translation()  # inicializa
+    return _state.language
 
 
 def get_supported_languages() -> dict:
@@ -91,7 +109,7 @@ def get_supported_languages() -> dict:
 
 
 def _(message: str) -> str:
-    """Traduz uma mensagem para o idioma atual.
+    """Traduz uma mensagem para o idioma da thread atual.
 
     Args:
         message (str): Mensagem a ser traduzida
@@ -99,13 +117,7 @@ def _(message: str) -> str:
     Returns:
         str: Mensagem traduzida
     """
-    global _current_translation
-
-    if _current_translation is None:
-        # Inicializar com idioma padrão se não foi configurado
-        set_language(DEFAULT_LANGUAGE)
-
-    return _current_translation.gettext(message)
+    return _get_translation().gettext(message)
 
 
 def ngettext(singular: str, plural: str, n: int) -> str:
@@ -119,12 +131,7 @@ def ngettext(singular: str, plural: str, n: int) -> str:
     Returns:
         str: Mensagem traduzida
     """
-    global _current_translation
-
-    if _current_translation is None:
-        set_language(DEFAULT_LANGUAGE)
-
-    return _current_translation.ngettext(singular, plural, n)
+    return _get_translation().ngettext(singular, plural, n)
 
 
 def detect_system_language() -> str:
@@ -136,20 +143,15 @@ def detect_system_language() -> str:
     import locale
 
     try:
-        # Tentar detectar o idioma do sistema
         system_locale = locale.getdefaultlocale()[0]
-
         if system_locale:
-            # Mapear locales comuns
             if system_locale.startswith("pt_BR") or system_locale.startswith("pt"):
                 return "pt_BR"
             elif system_locale.startswith("en"):
                 return "en"
-
     except Exception as e:
         logging.exception(f"Error loading translation: {e}")
 
-    # Verificar variáveis de ambiente
     env_lang = os.environ.get("LANG", "")
     if "pt" in env_lang.lower():
         return "pt_BR"
@@ -168,7 +170,3 @@ def auto_configure_language() -> str:
     detected_lang = detect_system_language()
     set_language(detected_lang)
     return detected_lang
-
-
-# Inicializar com idioma padrão
-set_language(DEFAULT_LANGUAGE)

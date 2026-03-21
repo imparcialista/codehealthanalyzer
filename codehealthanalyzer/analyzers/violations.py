@@ -37,6 +37,32 @@ class _ClassInfo:
     length: int
 
 
+class _FunctionVisitor(ast.NodeVisitor):
+    """Coleta informações de funções e métodos via AST."""
+
+    def __init__(self) -> None:
+        self.functions: List[_FunctionInfo] = []
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        length = ViolationsAnalyzer._end_lineno(node) - node.lineno + 1
+        self.functions.append(_FunctionInfo(node.name or "<lambda>", length))
+        self.generic_visit(node)
+
+    visit_AsyncFunctionDef = visit_FunctionDef  # type: ignore[assignment]
+
+
+class _ClassVisitor(ast.NodeVisitor):
+    """Coleta informações de classes via AST."""
+
+    def __init__(self) -> None:
+        self.classes: List[_ClassInfo] = []
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        length = ViolationsAnalyzer._end_lineno(node) - node.lineno + 1
+        self.classes.append(_ClassInfo(node.name, length))
+        self.generic_visit(node)
+
+
 class ViolationsAnalyzer(BaseAnalyzer):
     """Analisador de violações de tamanho de código."""
 
@@ -109,30 +135,14 @@ class ViolationsAnalyzer(BaseAnalyzer):
         return count
 
     def _gather_functions(self, tree: ast.AST) -> List[_FunctionInfo]:
-        functions: List[_FunctionInfo] = []
-
-        class Visitor(ast.NodeVisitor):
-            def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-                length = ViolationsAnalyzer._end_lineno(node) - node.lineno + 1
-                functions.append(_FunctionInfo(node.name or "<lambda>", length))
-                self.generic_visit(node)
-
-            visit_AsyncFunctionDef = visit_FunctionDef
-
-        Visitor().visit(tree)
-        return functions
+        visitor = _FunctionVisitor()
+        visitor.visit(tree)
+        return visitor.functions
 
     def _gather_classes(self, tree: ast.AST) -> List[_ClassInfo]:
-        classes: List[_ClassInfo] = []
-
-        class Visitor(ast.NodeVisitor):
-            def visit_ClassDef(self, node: ast.ClassDef) -> None:
-                length = ViolationsAnalyzer._end_lineno(node) - node.lineno + 1
-                classes.append(_ClassInfo(node.name, length))
-                self.generic_visit(node)
-
-        Visitor().visit(tree)
-        return classes
+        visitor = _ClassVisitor()
+        visitor.visit(tree)
+        return visitor.classes
 
     # -------------------------------------------------------------------------
     # Análise de arquivos
