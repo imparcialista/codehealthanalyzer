@@ -4,7 +4,7 @@ import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 import uvicorn
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
@@ -110,7 +110,7 @@ class DashboardServer:
                 violations.get("warnings", []) or []
             )
 
-            def _prio_weight(p: str) -> int:
+            def _prio_weight(p: Optional[str]) -> int:
                 return {"high": 3, "medium": 2, "low": 1}.get((p or "low").lower(), 0)
 
             files_items.sort(
@@ -143,7 +143,7 @@ class DashboardServer:
         except Exception as e:
             return {"error": str(e), "timestamp": datetime.now().isoformat()}
 
-    def _group_violations_by_type(self, violations: Dict) -> Dict:
+    def _group_violations_by_type(self, violations: Any) -> Dict[str, int]:
         """Agrupa violações por categoria para gráficos (conforme esquema atual)."""
         types: Dict[str, int] = {}
         items = (violations.get("violations", []) or []) + (

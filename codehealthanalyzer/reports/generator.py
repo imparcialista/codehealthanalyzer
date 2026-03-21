@@ -2,9 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, cast
 
-from ..schemas import ErrorsReport, FullReport, TemplatesReport, ViolationsReport
+from ..schemas import (
+    ActionPriority,
+    ErrorsReport,
+    FullReport,
+    SummaryReport,
+    TemplatesReport,
+    ViolationsReport,
+)
 from ..utils.helpers import FileHelper
 from ..version import __version__
 
@@ -29,7 +36,7 @@ class ReportGenerator:
         summary["quality_score"] = score
 
         # Prioridades de ação
-        priorities: list[dict[str, Any]] = []
+        priorities: List[ActionPriority] = []
         high_v = violations.get("statistics", {}).get("high_priority", 0)
         if high_v:
             priorities.append(
@@ -46,7 +53,7 @@ class ReportGenerator:
                 "version": __version__,
                 "analyzer": "CodeHealthAnalyzer",
             },
-            "summary": summary,
+            "summary": cast(SummaryReport, summary),
             "violations": violations,
             "templates": templates,
             "errors": errors,
@@ -57,7 +64,7 @@ class ReportGenerator:
         if output_dir:
             out = Path(output_dir)
             out.mkdir(parents=True, exist_ok=True)
-            FileHelper.write_json(report, out / "full_report.json")
+            FileHelper.write_json(cast(Dict[str, Any], report), out / "full_report.json")
 
         return report
 

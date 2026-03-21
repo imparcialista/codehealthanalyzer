@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 from io import StringIO
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Union, cast
 
 from ..schemas import FullReport
 from ..utils.helpers import FileHelper
@@ -12,7 +12,7 @@ from ..utils.helpers import FileHelper
 class ReportFormatter:
     """Formatadores para JSON, Markdown e CSV."""
 
-    def to_json(self, report: Dict[str, Any], output_file: str) -> bool:
+    def to_json(self, report: Any, output_file: str) -> bool:
         return FileHelper.write_json(report, output_file)
 
     def to_markdown(self, report: FullReport, output_file: str) -> str:
@@ -95,35 +95,35 @@ class ReportFormatter:
         return md.getvalue()
 
     def to_csv(self, report: FullReport, output_file: str) -> None:
-        rows = []
-        for item in report.get("violations", {}).get("violations", []) + report.get(
+        rows: List[Dict[str, Union[str, int, None]]] = []
+        for vio_item in report.get("violations", {}).get("violations", []) + report.get(
             "violations", {}
         ).get("warnings", []):
             rows.append(
                 {
                     "type": "violation",
-                    "file": item.get("file"),
-                    "priority": item.get("priority"),
-                    "lines": item.get("lines"),
+                    "file": vio_item.get("file"),
+                    "priority": vio_item.get("priority"),
+                    "lines": vio_item.get("lines"),
                 }
             )
-        for item in report.get("templates", {}).get("templates", []):
+        for tmpl_item in report.get("templates", {}).get("templates", []):
             rows.append(
                 {
                     "type": "template",
-                    "file": item.get("file"),
-                    "priority": item.get("priority"),
-                    "lines": item.get("total_css_chars", 0)
-                    + item.get("total_js_chars", 0),
+                    "file": tmpl_item.get("file"),
+                    "priority": tmpl_item.get("priority"),
+                    "lines": (tmpl_item.get("total_css_chars") or 0)
+                    + (tmpl_item.get("total_js_chars") or 0),
                 }
             )
-        for item in report.get("errors", {}).get("errors", []):
+        for err_item in report.get("errors", {}).get("errors", []):
             rows.append(
                 {
                     "type": "error",
-                    "file": item.get("file"),
-                    "priority": item.get("priority"),
-                    "lines": item.get("error_count"),
+                    "file": err_item.get("file"),
+                    "priority": err_item.get("priority"),
+                    "lines": err_item.get("error_count"),
                 }
             )
 

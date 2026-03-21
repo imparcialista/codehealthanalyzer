@@ -5,7 +5,7 @@ arquivos, violações e outros elementos baseado em regras predefinidas.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class Categorizer:
@@ -15,7 +15,7 @@ class Categorizer:
         config (dict, optional): Configurações de categorização
     """
 
-    def __init__(self, config: dict = None):
+    def __init__(self, config: Optional[dict] = None):
         self.config = config or {}
         self._load_rules()
 

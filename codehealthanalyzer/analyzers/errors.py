@@ -6,11 +6,11 @@ import shutil
 import subprocess  # nosec B404
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional, cast
 
 from ..config import DEFAULT_EXCLUDE_DIRS, normalize_config
 from ..exceptions import AnalyzerExecutionError
-from ..schemas import ErrorsReport
+from ..schemas import ErrorFileReport, ErrorStatistics, ErrorsReport
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class ErrorsAnalyzer:
         config (dict, optional): Configurações personalizadas
     """
 
-    def __init__(self, project_path: str, config: dict = None):
+    def __init__(self, project_path: str, config: Optional[dict] = None):
         self.project_path = Path(project_path)
         self.config = normalize_config(config)
         # Diretório alvo para varredura do Ruff; padrão para raiz do projeto
@@ -191,15 +191,18 @@ class ErrorsAnalyzer:
             ),
         }
 
-        return {
-            "metadata": {
-                "generated_at": datetime.now().isoformat(),
-                "total_errors": total_errors,
-                "total_files": len(processed_errors),
+        return cast(
+            ErrorsReport,
+            {
+                "metadata": {
+                    "generated_at": datetime.now().isoformat(),
+                    "total_errors": total_errors,
+                    "total_files": len(processed_errors),
+                },
+                "errors": cast(List[ErrorFileReport], processed_errors),
+                "statistics": cast(ErrorStatistics, stats),
             },
-            "errors": processed_errors,
-            "statistics": stats,
-        }
+        )
 
     def save_report(self, report: Dict, output_file: str):
         """Salva o relatório em arquivo JSON.

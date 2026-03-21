@@ -10,7 +10,7 @@ import logging
 import shutil
 import subprocess  # nosec B404
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import click
 
@@ -18,6 +18,7 @@ from .. import CodeAnalyzer, __version__
 from ..analyzers.errors import ErrorsAnalyzer
 from ..analyzers.templates import TemplatesAnalyzer
 from ..analyzers.violations import ViolationsAnalyzer
+from ..schemas import ErrorsReport, FullReport, TemplatesReport, ViolationsReport
 from ..config import normalize_config
 from ..exceptions import ConfigurationError
 from ..reports.formatter import ReportFormatter
@@ -52,7 +53,7 @@ def _load_config(
     return normalize_config(config_data)
 
 
-def _empty_violations_report() -> dict[str, Any]:
+def _empty_violations_report() -> ViolationsReport:
     return {
         "metadata": {
             "generated_at": "",
@@ -75,7 +76,7 @@ def _empty_violations_report() -> dict[str, Any]:
     }
 
 
-def _empty_templates_report() -> dict[str, Any]:
+def _empty_templates_report() -> TemplatesReport:
     return {
         "metadata": {"generated_at": "", "templates_paths": [], "total_templates": 0},
         "templates": [],
@@ -91,7 +92,7 @@ def _empty_templates_report() -> dict[str, Any]:
     }
 
 
-def _empty_errors_report() -> dict[str, Any]:
+def _empty_errors_report() -> ErrorsReport:
     return {
         "metadata": {"generated_at": "", "total_errors": 0, "total_files": 0},
         "errors": [],
@@ -106,16 +107,18 @@ def _empty_errors_report() -> dict[str, Any]:
     }
 
 
-def _wrap_single_report(kind: str, report: dict[str, Any]) -> dict[str, Any]:
+def _wrap_single_report(
+    kind: str, report: Any
+) -> FullReport:
     generator = ReportGenerator()
-    violations = report if kind == "violations" else _empty_violations_report()
-    templates = report if kind == "templates" else _empty_templates_report()
-    errors = report if kind == "errors" else _empty_errors_report()
+    violations = cast(ViolationsReport, report) if kind == "violations" else _empty_violations_report()
+    templates = cast(TemplatesReport, report) if kind == "templates" else _empty_templates_report()
+    errors = cast(ErrorsReport, report) if kind == "errors" else _empty_errors_report()
     return generator.generate_full_report(violations, templates, errors)
 
 
 def _write_report_files(
-    report: dict[str, Any],
+    report: FullReport,
     output_path: Path,
     base_name: str,
     format_name: str,

@@ -8,9 +8,9 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple, cast
 
-from ..schemas import ViolationFileReport, ViolationsReport
+from ..schemas import ViolationFileReport, ViolationStatistics, ViolationsReport
 from .base import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
                         start = getattr(first, "lineno", None)
                         end = getattr(first, "end_lineno", None) or start
                         if start is not None:
-                            yield (start, end)
+                            yield (start, end or start)
 
     def _python_docstring_lines(self, tree: ast.AST) -> set[int]:
         lines: set[int] = set()
@@ -158,7 +158,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
 
     def _apply_threshold(
         self,
-        result: Dict[str, object],
+        result: Dict[str, Any],
         kind: str,
         name: str,
         value: int,
@@ -181,7 +181,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
 
     def check_file(self, file_path: Path) -> ViolationFileReport:
         """Analisa um arquivo individual e retorna o resultado."""
-        result: Dict[str, object] = {
+        result: Dict[str, Any] = {
             "file": self.relpath(file_path),
             "violations": [],
             "priority": "low",
@@ -199,7 +199,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
                 logger.warning("Falha ao analisar %s: %s", file_path, exc)
                 result["violations"].append(f"Falha ao analisar AST: {exc}")
                 result["priority"] = "medium"
-                return result
+                return cast(ViolationFileReport, result)
 
             module_lines = self._effective_python_lines(file_path, tree)
             result["lines"] = module_lines
@@ -221,7 +221,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
         else:
             result["type"] = file_path.suffix or "Unknown"
 
-        return result
+        return cast(ViolationFileReport, result)
 
     # -------------------------------------------------------------------------
     # Execução geral
@@ -229,9 +229,9 @@ class ViolationsAnalyzer(BaseAnalyzer):
 
     def analyze(self) -> ViolationsReport:
         """Executa a análise completa de violações."""
-        all_results: List[Dict] = []
-        violations: List[Dict] = []
-        warnings: List[Dict] = []
+        all_results: List[ViolationFileReport] = []
+        violations: List[ViolationFileReport] = []
+        warnings: List[ViolationFileReport] = []
 
         for py_file in self.iter_files(self.PYTHON_PATTERNS):
             if self.should_skip(py_file):
@@ -271,18 +271,21 @@ class ViolationsAnalyzer(BaseAnalyzer):
             ),
         }
 
-        return {
-            "metadata": {
-                "generated_at": datetime.now().isoformat(),
-                "directory": str(self.project_path),
-                "total_files": stats["total_files"],
-                "violation_files": stats["violation_files"],
-                "warning_files": stats["warning_files"],
+        return cast(
+            ViolationsReport,
+            {
+                "metadata": {
+                    "generated_at": datetime.now().isoformat(),
+                    "directory": str(self.project_path),
+                    "total_files": stats["total_files"],
+                    "violation_files": stats["violation_files"],
+                    "warning_files": stats["warning_files"],
+                },
+                "violations": violations,
+                "warnings": warnings,
+                "statistics": cast(ViolationStatistics, stats),
             },
-            "violations": violations,
-            "warnings": warnings,
-            "statistics": stats,
-        }
+        )
 
     def save_report(self, report: Dict, output_file: str) -> None:
         """Salva o relatório em arquivo JSON."""

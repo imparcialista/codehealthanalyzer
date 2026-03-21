@@ -16,6 +16,8 @@ __author__ = "Imparcialista Team"
 __email__ = "contato@luarco.com.br"
 __description__ = "Biblioteca Python para análise de qualidade e saúde de código"
 
+from typing import Optional
+
 from .analyzers.errors import ErrorsAnalyzer
 from .analyzers.templates import TemplatesAnalyzer
 from .analyzers.violations import ViolationsAnalyzer
@@ -38,7 +40,7 @@ class CodeAnalyzer:
         config (dict, optional): Configurações personalizadas
     """
 
-    def __init__(self, project_path: str, config: dict = None):
+    def __init__(self, project_path: str, config: Optional[dict] = None):
         self.project_path = project_path
         from .config import normalize_config
 
@@ -64,7 +66,7 @@ class CodeAnalyzer:
         """Analisa erros do Ruff e outras ferramentas de linting."""
         return self.errors_analyzer.analyze()
 
-    def generate_full_report(self, output_dir: str = None):
+    def generate_full_report(self, output_dir: Optional[str] = None):
         """Gera relatório completo com todas as análises.
 
         Args:

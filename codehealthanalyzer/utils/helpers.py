@@ -143,7 +143,7 @@ class DataHelper:
     """Auxiliar para manipulação de dados."""
 
     @staticmethod
-    def format_bytes(bytes_count: int) -> str:
+    def format_bytes(bytes_count: float) -> str:
         """Formata bytes em formato legível.
 
         Args:
@@ -239,7 +239,7 @@ class DataHelper:
         Returns:
             dict: Itens agrupados
         """
-        groups = {}
+        groups: Dict[str, List[Dict]] = {}
         for item in items:
             group_key = item.get(key, "unknown")
             if group_key not in groups:

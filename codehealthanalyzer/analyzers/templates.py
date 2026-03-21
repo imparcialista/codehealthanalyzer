@@ -9,10 +9,10 @@ import logging
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from ..config import DEFAULT_TEMPLATE_DIRS
-from ..schemas import InlineAsset, TemplateFileReport, TemplatesReport
+from ..schemas import InlineAsset, TemplateFileReport, TemplateStatistics, TemplatesReport
 from .base import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
         config (dict, optional): Configurações personalizadas
     """
 
-    def __init__(self, project_path: str, config: dict = None):
+    def __init__(self, project_path: str, config: Optional[dict] = None):
         super().__init__(project_path, config)
         self.config = self.config or {}
         # Permite configurar diretórios de templates via config['templates_dir']
@@ -42,7 +42,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
             paths = [self.project_path / Path(item) for item in DEFAULT_TEMPLATE_DIRS]
         self.templates_paths = [p for p in paths]
 
-        self.results = []
+        self.results: List[TemplateFileReport] = []
 
     def _get_relative_path(
         self, file_path: Path, base_dir: Optional[Path] = None
@@ -82,7 +82,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
             # Remove comentários para análise mais limpa
             content_clean = re.sub(r"<!--.*?-->", "", content, flags=re.DOTALL)
 
-            analysis = {
+            analysis: Dict[str, Any] = {
                 "file": self._get_relative_path(file_path, base_dir),
                 "css_inline": self._extract_css_inline(content_clean),
                 "css_style_tags": self._extract_style_tags(content_clean),
@@ -124,7 +124,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
             analysis["css"] = analysis["total_css_chars"]
             analysis["js"] = analysis["total_js_chars"]
 
-            return analysis
+            return cast(TemplateFileReport, analysis)
 
         except Exception as e:
             logger.warning("Erro ao analisar %s: %s", file_path, e)
@@ -183,7 +183,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
                     }
                 )
 
-        return css_inline
+        return cast(List[InlineAsset], css_inline)
 
     def _extract_style_tags(self, content: str) -> List[InlineAsset]:
         """Extrai conteúdo de tags <style>."""
@@ -202,7 +202,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
                     }
                 )
 
-        return style_tags
+        return cast(List[InlineAsset], style_tags)
 
     def _extract_js_inline(self, content: str) -> List[InlineAsset]:
         """Extrai JavaScript inline dos atributos de eventos."""
@@ -232,7 +232,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
                         }
                     )
 
-        return js_inline
+        return cast(List[InlineAsset], js_inline)
 
     def _extract_script_tags(self, content: str) -> List[InlineAsset]:
         """Extrai conteúdo de tags <script>."""
@@ -251,7 +251,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
                     }
                 )
 
-        return script_tags
+        return cast(List[InlineAsset], script_tags)
 
     def _generate_recommendations(self, analysis: Dict[str, Any]) -> List[str]:
         """Gera recomendações baseadas na análise."""
@@ -335,15 +335,18 @@ class TemplatesAnalyzer(BaseAnalyzer):
             "templates_with_js": len([r for r in results if r["total_js_chars"] > 0]),
         }
 
-        return {
-            "metadata": {
-                "generated_at": datetime.now().isoformat(),
-                "templates_paths": [str(p) for p in existing_paths],
-                "total_templates": stats["total_templates"],
+        return cast(
+            TemplatesReport,
+            {
+                "metadata": {
+                    "generated_at": datetime.now().isoformat(),
+                    "templates_paths": [str(p) for p in existing_paths],
+                    "total_templates": stats["total_templates"],
+                },
+                "templates": results,
+                "statistics": cast(TemplateStatistics, stats),
             },
-            "templates": results,
-            "statistics": stats,
-        }
+        )
 
     def _empty_report(self) -> TemplatesReport:
         """Retorna um relatório vazio."""
