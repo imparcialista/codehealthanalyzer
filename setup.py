@@ -87,6 +87,7 @@ setup(
             "nox>=2024.4.15",
             "mypy>=1.0.0",
             "httpx>=0.24.0",
+            "pytest-mock>=3.0.0",
         ],
         "docs": [
             "sphinx>=5.0.0",
