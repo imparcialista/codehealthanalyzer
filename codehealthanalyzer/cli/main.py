@@ -18,11 +18,11 @@ from .. import CodeAnalyzer, __version__
 from ..analyzers.errors import ErrorsAnalyzer
 from ..analyzers.templates import TemplatesAnalyzer
 from ..analyzers.violations import ViolationsAnalyzer
-from ..schemas import ErrorsReport, FullReport, TemplatesReport, ViolationsReport
 from ..config import normalize_config
 from ..exceptions import ConfigurationError
 from ..reports.formatter import ReportFormatter
 from ..reports.generator import ReportGenerator
+from ..schemas import ErrorsReport, FullReport, TemplatesReport, ViolationsReport
 from ..utils.helpers import ColorHelper
 from ..utils.validators import PathValidator
 
@@ -107,12 +107,18 @@ def _empty_errors_report() -> ErrorsReport:
     }
 
 
-def _wrap_single_report(
-    kind: str, report: Any
-) -> FullReport:
+def _wrap_single_report(kind: str, report: Any) -> FullReport:
     generator = ReportGenerator()
-    violations = cast(ViolationsReport, report) if kind == "violations" else _empty_violations_report()
-    templates = cast(TemplatesReport, report) if kind == "templates" else _empty_templates_report()
+    violations = (
+        cast(ViolationsReport, report)
+        if kind == "violations"
+        else _empty_violations_report()
+    )
+    templates = (
+        cast(TemplatesReport, report)
+        if kind == "templates"
+        else _empty_templates_report()
+    )
     errors = cast(ErrorsReport, report) if kind == "errors" else _empty_errors_report()
     return generator.generate_full_report(violations, templates, errors)
 

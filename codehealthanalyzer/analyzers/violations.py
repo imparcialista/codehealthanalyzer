@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple, cast
 
-from ..schemas import ViolationFileReport, ViolationStatistics, ViolationsReport
+from ..schemas import ViolationFileReport, ViolationsReport, ViolationStatistics
 from .base import BaseAnalyzer
 
 logger = logging.getLogger(__name__)

@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, cast
 
 from ..config import DEFAULT_EXCLUDE_DIRS, normalize_config
 from ..exceptions import AnalyzerExecutionError
-from ..schemas import ErrorFileReport, ErrorStatistics, ErrorsReport
+from ..schemas import ErrorFileReport, ErrorsReport, ErrorStatistics
 
 logger = logging.getLogger(__name__)
 

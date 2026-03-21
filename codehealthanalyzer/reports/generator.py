@@ -64,7 +64,9 @@ class ReportGenerator:
         if output_dir:
             out = Path(output_dir)
             out.mkdir(parents=True, exist_ok=True)
-            FileHelper.write_json(cast(Dict[str, Any], report), out / "full_report.json")
+            FileHelper.write_json(
+                cast(Dict[str, Any], report), out / "full_report.json"
+            )
 
         return report
 

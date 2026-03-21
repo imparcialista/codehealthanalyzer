@@ -12,7 +12,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
 from ..config import DEFAULT_TEMPLATE_DIRS
-from ..schemas import InlineAsset, TemplateFileReport, TemplateStatistics, TemplatesReport
+from ..schemas import (
+    InlineAsset,
+    TemplateFileReport,
+    TemplatesReport,
+    TemplateStatistics,
+)
 from .base import BaseAnalyzer
 
 logger = logging.getLogger(__name__)

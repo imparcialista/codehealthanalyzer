@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 from io import StringIO
 from pathlib import Path
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Dict, List, Union
 
 from ..schemas import FullReport
 from ..utils.helpers import FileHelper
