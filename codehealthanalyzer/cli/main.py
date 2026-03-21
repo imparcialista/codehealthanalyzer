@@ -3,6 +3,8 @@
 Este módulo fornece uma CLI amigável para usar a biblioteca CodeHealthAnalyzer.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import shutil
