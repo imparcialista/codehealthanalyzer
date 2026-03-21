@@ -4,7 +4,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from ..schemas import ErrorsReport, FullReport, TemplatesReport, ViolationsReport
 from ..utils.helpers import FileHelper
+from ..version import __version__
 
 
 class ReportGenerator:
@@ -15,11 +17,11 @@ class ReportGenerator:
 
     def generate_full_report(
         self,
-        violations: Dict[str, Any],
-        templates: Dict[str, Any],
-        errors: Dict[str, Any],
+        violations: ViolationsReport,
+        templates: TemplatesReport,
+        errors: ErrorsReport,
         output_dir: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> FullReport:
         # Calcula score uma única vez e constrói summary consistente
         score = self.calculate_quality_score(violations, templates, errors)
         summary = self._generate_summary(violations, templates, errors)
@@ -38,10 +40,10 @@ class ReportGenerator:
                 }
             )
 
-        report: Dict[str, Any] = {
+        report: FullReport = {
             "metadata": {
                 "generated_at": summary["generated_at"],
-                "version": "1.1.1",
+                "version": __version__,
                 "analyzer": "CodeHealthAnalyzer",
             },
             "summary": summary,
@@ -61,9 +63,9 @@ class ReportGenerator:
 
     def _generate_summary(
         self,
-        violations: Dict[str, Any],
-        templates: Dict[str, Any],
-        errors: Dict[str, Any],
+        violations: ViolationsReport,
+        templates: TemplatesReport,
+        errors: ErrorsReport,
     ) -> Dict[str, Any]:
         return {
             "total_files": violations.get("metadata", {}).get("total_files", 0),
@@ -78,9 +80,9 @@ class ReportGenerator:
 
     def calculate_quality_score(
         self,
-        violations: Dict[str, Any],
-        templates: Dict[str, Any],
-        errors: Dict[str, Any],
+        violations: ViolationsReport,
+        templates: TemplatesReport,
+        errors: ErrorsReport,
     ) -> int:
         score = 100
         score -= 10 * violations.get("statistics", {}).get("high_priority", 0)
@@ -88,7 +90,7 @@ class ReportGenerator:
         score -= 5 * templates.get("statistics", {}).get("high_priority", 0)
         return max(0, min(100, score))
 
-    def generate_html_report(self, report: Dict[str, Any], output_file: str) -> str:
+    def generate_html_report(self, report: FullReport, output_file: str) -> str:
         # Build priorities list
         priorities_items = (
             "".join(

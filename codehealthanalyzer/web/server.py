@@ -16,6 +16,8 @@ from ..analyzers.errors import ErrorsAnalyzer
 from ..analyzers.templates import TemplatesAnalyzer
 from ..analyzers.violations import ViolationsAnalyzer
 from ..reports.generator import ReportGenerator
+from ..schemas import DashboardMetrics
+from ..version import __version__
 
 
 class DashboardServer:
@@ -25,7 +27,7 @@ class DashboardServer:
         self.app = FastAPI(
             title="CodeHealthAnalyzer Dashboard",
             description="Dashboard interativo para análise de qualidade de código",
-            version="1.0.0",
+            version=__version__,
         )
         self.project_path = Path(project_path)
         self.connected_clients: List[WebSocket] = []
@@ -85,7 +87,7 @@ class DashboardServer:
             """WebSocket para atualizações em tempo real."""
             await self._handle_websocket(websocket)
 
-    async def _get_current_metrics(self) -> Dict:
+    async def _get_current_metrics(self) -> DashboardMetrics:
         """Obtém métricas atuais do projeto."""
         try:
             # Executar análises
@@ -119,7 +121,7 @@ class DashboardServer:
                 reverse=True,
             )
 
-            metrics = {
+            metrics: DashboardMetrics = {
                 "timestamp": datetime.now().isoformat(),
                 # quality_score está no nível superior do relatório consolidado
                 "quality_score": report.get("quality_score", 0),

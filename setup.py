@@ -7,6 +7,14 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
+about = {}
+exec(
+    (Path(__file__).parent / "codehealthanalyzer" / "version.py").read_text(
+        encoding="utf-8"
+    ),
+    about,
+)
+
 # Lê o README para a descrição longa (português + inglês)
 this_directory = Path(__file__).parent
 readme_pt = (
@@ -41,7 +49,7 @@ if requirements_file.exists():
 
 setup(
     name="codehealthanalyzer",
-    version="1.1.9",
+    version=about["__version__"],
     author="Luarco Team",
     author_email="contato@luarco.com.br",
     description="Biblioteca Python para análise de qualidade e saúde de código",

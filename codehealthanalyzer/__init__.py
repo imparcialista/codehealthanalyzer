@@ -12,7 +12,6 @@ Exemplo de uso:
     print(report.summary())
 """
 
-__version__ = "1.1.9"
 __author__ = "Imparcialista Team"
 __email__ = "contato@luarco.com.br"
 __description__ = "Biblioteca Python para análise de qualidade e saúde de código"
@@ -20,8 +19,14 @@ __description__ = "Biblioteca Python para análise de qualidade e saúde de cód
 from .analyzers.errors import ErrorsAnalyzer
 from .analyzers.templates import TemplatesAnalyzer
 from .analyzers.violations import ViolationsAnalyzer
+from .exceptions import (
+    AnalyzerExecutionError,
+    CodeHealthAnalyzerError,
+    ConfigurationError,
+)
 from .reports.generator import ReportGenerator
 from .utils.categorizer import Categorizer
+from .version import __version__
 
 
 # Classe principal da biblioteca
@@ -35,7 +40,9 @@ class CodeAnalyzer:
 
     def __init__(self, project_path: str, config: dict = None):
         self.project_path = project_path
-        self.config = config or {}
+        from .config import normalize_config
+
+        self.config = normalize_config(config)
 
         # Inicializa os analisadores
         self.violations_analyzer = ViolationsAnalyzer(project_path, self.config)
@@ -100,4 +107,8 @@ __all__ = [
     "ErrorsAnalyzer",
     "ReportGenerator",
     "Categorizer",
+    "CodeHealthAnalyzerError",
+    "ConfigurationError",
+    "AnalyzerExecutionError",
+    "__version__",
 ]

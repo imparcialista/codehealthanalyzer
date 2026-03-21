@@ -1,15 +1,18 @@
-"""Analisador de erros de linting (Ruff).
-
-Este módulo contém a classe ErrorsAnalyzer que executa ferramentas de linting
-como Ruff e analisa os erros encontrados.
-"""
+"""Analisador de erros de linting baseado em Ruff."""
 
 import json
+import logging
 import shutil
 import subprocess  # nosec B404
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+
+from ..config import DEFAULT_EXCLUDE_DIRS, normalize_config
+from ..exceptions import AnalyzerExecutionError
+from ..schemas import ErrorsReport
+
+logger = logging.getLogger(__name__)
 
 
 class ErrorsAnalyzer:
@@ -22,7 +25,7 @@ class ErrorsAnalyzer:
 
     def __init__(self, project_path: str, config: dict = None):
         self.project_path = Path(project_path)
-        self.config = config or {}
+        self.config = normalize_config(config)
         # Diretório alvo para varredura do Ruff; padrão para raiz do projeto
         self.target_dir = self.config.get("target_dir", ".")
         # Exclusions
@@ -31,41 +34,38 @@ class ErrorsAnalyzer:
 
     def run_ruff_check(self) -> List[Dict]:
         """Executa ruff check e retorna os erros."""
+        ruff_executable = shutil.which("ruff")
+        if not ruff_executable:
+            raise AnalyzerExecutionError(
+                "Ruff não encontrado. Instale com: pip install ruff"
+            )
         try:
-            ruff_executable = shutil.which("ruff")
-            if not ruff_executable:
-                print("Ruff não encontrado. Instale com: pip install ruff")
-                return []
-
-            # Se habilitado na config, tenta aplicar correções automáticas
             if self.config.get("ruff_fix", False):
                 subprocess.run(  # nosec B607, B603
                     [ruff_executable, "check", self.target_dir, "--fix"],
                     capture_output=True,
                     text=True,
                     cwd=self.project_path,
+                    check=False,
                 )
 
-            # Depois, verifica erros restantes
             result = subprocess.run(  # nosec B607, B603
                 [ruff_executable, "check", self.target_dir, "--output-format", "json"],
                 capture_output=True,
                 text=True,
                 cwd=self.project_path,
+                check=False,
             )
 
+            if result.returncode not in (0, 1):
+                raise AnalyzerExecutionError(
+                    result.stderr.strip() or "Falha ao executar ruff"
+                )
             if result.stdout:
                 return json.loads(result.stdout)
             return []
-        except subprocess.CalledProcessError as e:
-            print(f"Erro ao executar ruff: {e}")
-            return []
         except json.JSONDecodeError as e:
-            print(f"Erro ao decodificar JSON: {e}")
-            return []
-        except FileNotFoundError:
-            print("Ruff não encontrado. Instale com: pip install ruff")
-            return []
+            raise AnalyzerExecutionError(f"Erro ao decodificar JSON: {e}") from e
 
     def categorize_error(self, error: Dict) -> str:
         """Categoriza o erro baseado no código."""
@@ -107,25 +107,7 @@ class ErrorsAnalyzer:
     def process_errors(self, raw_errors: List[Dict]) -> List[Dict]:
         """Processa e agrupa erros por arquivo."""
         files_data = {}
-        default_patterns = [
-            ".git",
-            "__pycache__",
-            ".pytest_cache",
-            "node_modules",
-            ".venv",
-            "venv",
-            ".env",
-            "migrations",
-            ".ruff_cache",
-            "tests",
-            "scripts",
-            "reports",
-            "dist",
-            "build",
-            "site-packages",
-            ".tox",
-            ".nox",
-        ]
+        default_patterns = DEFAULT_EXCLUDE_DIRS
         skip_patterns = [] if self.no_default_excludes else default_patterns
         skip_patterns.extend(self.user_exclude_dirs)
 
@@ -172,13 +154,17 @@ class ErrorsAnalyzer:
 
         return list(files_data.values())
 
-    def analyze(self) -> Dict:
+    def analyze(self) -> ErrorsReport:
         """Executa a análise completa de erros.
 
         Returns:
             dict: Relatório completo com erros encontrados
         """
-        raw_errors = self.run_ruff_check()
+        try:
+            raw_errors = self.run_ruff_check()
+        except AnalyzerExecutionError as exc:
+            logger.warning("Falha ao executar ruff: %s", exc)
+            raw_errors = []
         processed_errors = self.process_errors(raw_errors)
 
         # Calcula estatísticas

@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
+from ..schemas import ViolationFileReport, ViolationsReport
 from .base import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -168,7 +169,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
             if result["priority"] == "low":
                 result["priority"] = "medium"
 
-    def check_file(self, file_path: Path) -> Dict:
+    def check_file(self, file_path: Path) -> ViolationFileReport:
         """Analisa um arquivo individual e retorna o resultado."""
         result: Dict[str, object] = {
             "file": self.relpath(file_path),
@@ -216,7 +217,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
     # Execução geral
     # -------------------------------------------------------------------------
 
-    def analyze(self) -> Dict:
+    def analyze(self) -> ViolationsReport:
         """Executa a análise completa de violações."""
         all_results: List[Dict] = []
         violations: List[Dict] = []
@@ -254,9 +255,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
             "medium_priority": len(
                 [v for v in violations + warnings if v["priority"] == "medium"]
             ),
-            "python_files": len(
-                [r for r in all_results if r.get("type") == "Python"]
-            ),
+            "python_files": len([r for r in all_results if r.get("type") == "Python"]),
             "html_files": len(
                 [r for r in all_results if r.get("type") == "HTML Template"]
             ),

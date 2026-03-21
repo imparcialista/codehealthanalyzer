@@ -182,3 +182,6 @@ example_report.md
 scripts/release.bat
 scripts/release.py
 scripts/release.sh
+
+# Claude Code local settings
+.claude/

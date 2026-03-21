@@ -6,6 +6,8 @@ Este módulo contém validadores para caminhos, configurações e outros dados.
 from pathlib import Path
 from typing import Any, Dict
 
+from ..config import DEFAULT_EXCLUDE_DIRS
+
 
 class PathValidator:
     """Validador de caminhos e arquivos."""
@@ -125,22 +127,7 @@ class PathValidator:
         Returns:
             bool: True se deve ser ignorado
         """
-        skip_patterns = [
-            ".git",
-            "__pycache__",
-            ".pytest_cache",
-            "node_modules",
-            ".venv",
-            "venv",
-            ".env",
-            "migrations",
-            ".ruff_cache",
-            ".mypy_cache",
-            ".tox",
-            "dist",
-            "build",
-            "*.egg-info",
-        ]
+        skip_patterns = [*DEFAULT_EXCLUDE_DIRS, "*.egg-info"]
 
         path_str = str(path).lower()
         return any(pattern.lower() in path_str for pattern in skip_patterns)

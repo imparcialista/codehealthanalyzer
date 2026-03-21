@@ -6,6 +6,8 @@ import fnmatch
 from pathlib import Path
 from typing import Iterable, List, Sequence
 
+from ..config import DEFAULT_EXCLUDE_DIRS, normalize_config
+
 
 class BaseAnalyzer:
     """Classe base com utilidades compartilhadas entre analisadores.
@@ -15,28 +17,11 @@ class BaseAnalyzer:
         config: Dicionário de configurações específicas.
     """
 
-    DEFAULT_SKIP_DIRS: Sequence[str] = (
-        ".git",
-        "__pycache__",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".mypy_cache",
-        ".tox",
-        ".nox",
-        ".venv",
-        "venv",
-        "node_modules",
-        "dist",
-        "build",
-        "site-packages",
-        "reports",
-        "scripts",
-        "tests",
-    )
+    DEFAULT_SKIP_DIRS: Sequence[str] = tuple(DEFAULT_EXCLUDE_DIRS)
 
     def __init__(self, project_path: str, config: dict | None = None) -> None:
         self.project_path = Path(project_path)
-        self.config = config or {}
+        self.config = normalize_config(config)
         self.no_default_excludes = bool(self.config.get("no_default_excludes", False))
         user_excludes = self.config.get("exclude_dirs", [])
         if isinstance(user_excludes, (str, Path)):

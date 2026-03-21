@@ -5,6 +5,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Any, Dict
 
+from ..schemas import FullReport
 from ..utils.helpers import FileHelper
 
 
@@ -14,7 +15,7 @@ class ReportFormatter:
     def to_json(self, report: Dict[str, Any], output_file: str) -> bool:
         return FileHelper.write_json(report, output_file)
 
-    def to_markdown(self, report: Dict[str, Any], output_file: str) -> str:
+    def to_markdown(self, report: FullReport, output_file: str) -> str:
         md = StringIO()
         s = report.get("summary", {})
 
@@ -93,15 +94,36 @@ class ReportFormatter:
         Path(output_file).write_text(md.getvalue(), encoding="utf-8")
         return md.getvalue()
 
-    def to_csv(self, report: Dict[str, Any], output_file: str) -> None:
+    def to_csv(self, report: FullReport, output_file: str) -> None:
         rows = []
-        for item in report.get("violations", {}).get("violations", []):
+        for item in report.get("violations", {}).get("violations", []) + report.get(
+            "violations", {}
+        ).get("warnings", []):
             rows.append(
                 {
                     "type": "violation",
                     "file": item.get("file"),
                     "priority": item.get("priority"),
                     "lines": item.get("lines"),
+                }
+            )
+        for item in report.get("templates", {}).get("templates", []):
+            rows.append(
+                {
+                    "type": "template",
+                    "file": item.get("file"),
+                    "priority": item.get("priority"),
+                    "lines": item.get("total_css_chars", 0)
+                    + item.get("total_js_chars", 0),
+                }
+            )
+        for item in report.get("errors", {}).get("errors", []):
+            rows.append(
+                {
+                    "type": "error",
+                    "file": item.get("file"),
+                    "priority": item.get("priority"),
+                    "lines": item.get("error_count"),
                 }
             )
 
@@ -112,7 +134,7 @@ class ReportFormatter:
             for r in rows:
                 writer.writerow(r)
 
-    def generate_summary_table(self, report: Dict[str, Any]) -> str:
+    def generate_summary_table(self, report: FullReport) -> str:
         s = report.get("summary", {})
         lines = [
             "+-------------------------+---------+",

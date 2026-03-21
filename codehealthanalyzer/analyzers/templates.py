@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ..config import DEFAULT_TEMPLATE_DIRS
+from ..schemas import InlineAsset, TemplateFileReport, TemplatesReport
 from .base import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -37,10 +39,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
                 paths = [self.project_path / Path(str(configured))]
         # Fallbacks comuns
         if not paths:
-            paths = [
-                self.project_path / "templates",
-                self.project_path / "cha" / "templates",
-            ]
+            paths = [self.project_path / Path(item) for item in DEFAULT_TEMPLATE_DIRS]
         self.templates_paths = [p for p in paths]
 
         self.results = []
@@ -74,7 +73,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
 
     def analyze_file(
         self, file_path: Path, base_dir: Optional[Path] = None
-    ) -> Dict[str, Any]:
+    ) -> TemplateFileReport:
         """Analisa um arquivo HTML em busca de CSS inline e JavaScript."""
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -167,7 +166,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
         else:
             return "Template"
 
-    def _extract_css_inline(self, content: str) -> List[Dict[str, Any]]:
+    def _extract_css_inline(self, content: str) -> List[InlineAsset]:
         """Extrai CSS inline dos atributos style."""
         css_inline = []
         style_pattern = r'style\s*=\s*["\']([^"\'>]+)["\']'
@@ -186,7 +185,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
 
         return css_inline
 
-    def _extract_style_tags(self, content: str) -> List[Dict[str, Any]]:
+    def _extract_style_tags(self, content: str) -> List[InlineAsset]:
         """Extrai conteúdo de tags <style>."""
         style_tags = []
         style_pattern = r"<style[^>]*>([\s\S]*?)</style>"
@@ -205,7 +204,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
 
         return style_tags
 
-    def _extract_js_inline(self, content: str) -> List[Dict[str, Any]]:
+    def _extract_js_inline(self, content: str) -> List[InlineAsset]:
         """Extrai JavaScript inline dos atributos de eventos."""
         js_inline = []
 
@@ -222,7 +221,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
         for pattern in event_patterns:
             for match in re.finditer(pattern, content, re.IGNORECASE):
                 js_content = match.group(1)
-                if len(js_content.strip()) > 10:  # Só considera JS significativo
+                if js_content.strip():
                     line_num = content[: match.start()].count("\n") + 1
                     js_inline.append(
                         {
@@ -235,7 +234,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
 
         return js_inline
 
-    def _extract_script_tags(self, content: str) -> List[Dict[str, Any]]:
+    def _extract_script_tags(self, content: str) -> List[InlineAsset]:
         """Extrai conteúdo de tags <script>."""
         script_tags = []
         script_pattern = r"<script(?![^>]*src\s*=)[^>]*>([\s\S]*?)</script>"
@@ -298,7 +297,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
         """Compatibilidade retroativa; delega para BaseAnalyzer."""
         return self.should_skip(file_path)
 
-    def analyze(self) -> Dict:
+    def analyze(self) -> TemplatesReport:
         """Executa a análise completa de templates.
 
         Returns:
@@ -346,7 +345,7 @@ class TemplatesAnalyzer(BaseAnalyzer):
             "statistics": stats,
         }
 
-    def _empty_report(self) -> Dict:
+    def _empty_report(self) -> TemplatesReport:
         """Retorna um relatório vazio."""
         return {
             "metadata": {

@@ -1,13 +1,12 @@
-"""Utilitários auxiliares.
-
-Este módulo contém funções auxiliares para operações comuns como
-manipulação de arquivos, formatação de dados, etc.
-"""
+"""Utilitarios auxiliares."""
 
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+
+logger = logging.getLogger(__name__)
 
 
 class FileHelper:
@@ -27,7 +26,7 @@ class FileHelper:
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError) as e:
-            print(f"Erro ao ler {file_path}: {e}")
+            logger.warning("Erro ao ler JSON %s: %s", file_path, e)
             return None
 
     @staticmethod
@@ -50,7 +49,7 @@ class FileHelper:
                 json.dump(data, f, indent=indent, ensure_ascii=False)
             return True
         except Exception as e:
-            print(f"Erro ao escrever {file_path}: {e}")
+            logger.warning("Erro ao escrever JSON %s: %s", file_path, e)
             return False
 
     @staticmethod
@@ -67,7 +66,7 @@ class FileHelper:
             with open(file_path, "r", encoding="utf-8") as f:
                 return f.read()
         except (FileNotFoundError, UnicodeDecodeError) as e:
-            print(f"Erro ao ler {file_path}: {e}")
+            logger.warning("Erro ao ler texto %s: %s", file_path, e)
             return None
 
     @staticmethod
@@ -89,7 +88,7 @@ class FileHelper:
                 f.write(content)
             return True
         except Exception as e:
-            print(f"Erro ao escrever {file_path}: {e}")
+            logger.warning("Erro ao escrever texto %s: %s", file_path, e)
             return False
 
     @staticmethod
