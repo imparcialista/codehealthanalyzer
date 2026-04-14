@@ -1,129 +1,132 @@
 Guia de Início Rápido
 =====================
 
-Este guia irá ajudá-lo a começar a usar o CodeHealthAnalyzer rapidamente.
+Este guia cobre o fluxo mínimo para instalar, executar a CLI e consumir a
+API Python da versão atual da biblioteca.
 
 Primeiro Uso
 ------------
 
-Após a instalação, você pode começar a usar o CodeHealthAnalyzer imediatamente:
+Após a instalação, rode uma análise simples no diretório atual:
 
 .. code-block:: bash
 
-   # Navegar para o diretório do seu projeto
    cd /caminho/para/seu/projeto
-
-   # Executar análise básica
    codehealthanalyzer analyze .
 
 Comandos Básicos da CLI
 -----------------------
 
-**Análise Completa**
+**Análise completa**
 
 .. code-block:: bash
 
-   codehealthanalyzer analyze . --format json --output reports/
+   codehealthanalyzer analyze . --format all --output reports
 
-**Score de Qualidade**
+**Score de qualidade**
 
 .. code-block:: bash
 
    codehealthanalyzer score .
 
-**Informações do Projeto**
+**Informações do projeto**
 
 .. code-block:: bash
 
    codehealthanalyzer info .
 
-**Análises Específicas**
+**Análises específicas**
 
 .. code-block:: bash
 
    # Apenas violações de tamanho
-   codehealthanalyzer violations .
+   codehealthanalyzer violations . --format csv
 
    # Apenas templates HTML
-   codehealthanalyzer templates .
+   codehealthanalyzer templates . --config config.json
 
    # Apenas erros de linting
-   codehealthanalyzer errors .
+   codehealthanalyzer errors . --no-json --format markdown
+
+**Dashboard**
+
+.. code-block:: bash
+
+   codehealthanalyzer dashboard .
 
 Uso da API Python
 -----------------
 
-**Exemplo Básico**
+**Exemplo básico**
 
 .. code-block:: python
 
    from codehealthanalyzer import CodeAnalyzer
 
-   # Criar analisador
    analyzer = CodeAnalyzer('.')
-
-   # Obter score de qualidade
    score = analyzer.get_quality_score()
    print(f"Score: {score}/100")
 
-**Análise Completa**
+**Análise completa**
 
 .. code-block:: python
 
    from codehealthanalyzer import CodeAnalyzer
 
-   analyzer = CodeAnalyzer('/caminho/para/projeto')
-   
-   # Gerar relatório completo
-   report = analyzer.generate_full_report(output_dir='reports')
-   
-   # Acessar dados específicos
+   analyzer = CodeAnalyzer(
+       "/caminho/para/projeto",
+       config={"target_dir": ".", "templates_dir": ["templates"]},
+   )
+   report = analyzer.generate_full_report(output_dir="reports")
    violations = analyzer.analyze_violations()
    templates = analyzer.analyze_templates()
    errors = analyzer.analyze_errors()
 
-**Com Configuração Personalizada**
+**Com configuração personalizada**
 
 .. code-block:: python
 
    config = {
-       'limits': {
-           'python_function': {'yellow': 25, 'red': 40},
-           'python_class': {'yellow': 250, 'red': 400}
-       }
+       "limits": {
+           "python_function": {"yellow": 30, "red": 50},
+           "python_class": {"yellow": 300, "red": 500},
+       },
+       "templates_dir": ["templates", "app/templates"],
+       "exclude_dirs": ["legacy", "vendor"],
    }
-   
+
    analyzer = CodeAnalyzer('.', config)
    report = analyzer.generate_full_report()
 
 Interpretando os Resultados
 ---------------------------
 
-**Score de Qualidade**
+**Score de qualidade**
 
-* **80-100**: 🟢 Excelente - Código de alta qualidade
-* **60-79**: 🟡 Bom - Algumas melhorias recomendadas
-* **0-59**: 🔴 Precisa melhorar - Ação necessária
+* **80-100**: excelente
+* **60-79**: bom, com melhorias recomendadas
+* **0-59**: precisa de ação
 
 **Prioridades**
 
-* **Alta**: Problemas que afetam funcionalidade ou manutenibilidade
-* **Média**: Melhorias recomendadas para qualidade
-* **Baixa**: Otimizações opcionais
+* **Alta**: problemas críticos para manutenção
+* **Média**: correções importantes, mas não urgentes
+* **Baixa**: otimizações e refinamentos
 
-**Tipos de Violações**
+**Saída consolidada**
 
-* **Função longa**: Mais de 50 linhas
-* **Classe grande**: Mais de 500 linhas
-* **Módulo extenso**: Mais de 1000 linhas
-* **Template longo**: Mais de 200 linhas
+O relatório completo inclui:
+
+* ``summary`` com score e contagens agregadas
+* ``violations`` com arquivos problemáticos e warnings
+* ``templates`` com CSS/JS inline encontrados
+* ``errors`` com issues coletadas do Ruff
+* ``priorities`` com ações ordenadas por criticidade
 
 Próximos Passos
 ---------------
 
-1. **Configuração**: Personalize limites e regras no arquivo de configuração
-2. **Integração**: Adicione ao seu pipeline de CI/CD
-3. **Relatórios**: Explore diferentes formatos de saída (HTML, Markdown, CSV)
-4. **Automação**: Use a API Python para integração personalizada
-
-Veja a seção :doc:`configuration` para mais detalhes sobre personalização.
+1. Personalize limites e exclusões no arquivo JSON de configuração.
+2. Integre os comandos da CLI ao CI do projeto.
+3. Use os formatos HTML, Markdown e CSV conforme o público do relatório.
+4. Acople a API Python em scripts internos ou pipelines.

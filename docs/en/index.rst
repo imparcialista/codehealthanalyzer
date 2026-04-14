@@ -13,21 +13,23 @@ CodeHealthAnalyzer Documentation
    :target: https://github.com/psf/black
    :alt: Code Style
 
-CodeHealthAnalyzer is a modern and comprehensive Python library for code quality analysis. 
-It combines multiple analysis tools into a unified interface, providing detailed insights 
-about your code's health.
+CodeHealthAnalyzer is a Python library for code health analysis focused on
+three areas:
+
+* size violations in modules, classes, functions, and templates
+* inline CSS and JavaScript in HTML templates
+* linting issues collected through Ruff
 
 Key Features
 ------------
 
-* **🚨 Violations Analysis**: Detects functions, classes, and modules that exceed size limits
-* **🎨 Template Analysis**: Identifies inline CSS/JS in HTML templates that can be extracted
-* **⚠️ Ruff Integration**: Analyzes linting errors and categorizes them by priority
-* **📊 Quality Score**: Calculates a 0-100 score based on overall code health
-* **🎯 Smart Prioritization**: Suggests actions based on problem criticality
-* **📈 Multiple Reports**: Generates reports in JSON, HTML, Markdown, and CSV
-* **🖥️ Friendly CLI**: Complete and intuitive command-line interface
-* **🔧 Highly Configurable**: Customize limits, rules, and categories
+* **Stable Python API** with ``CodeAnalyzer`` and specialized analyzers
+* **Complete CLI** with ``analyze``, ``violations``, ``templates``, ``errors``,
+  ``score``, ``info``, ``dashboard``, ``format``, and ``lint``
+* **Reports in JSON, HTML, Markdown, and CSV**
+* **Optional FastAPI dashboard** for aggregated metrics
+* **Typed report contract** and centralized versioning
+* **JSON configuration** for limits, directories, and exclusions
 
 Installation
 ------------
@@ -36,6 +38,12 @@ Installation
 
    pip install codehealthanalyzer
 
+With dashboard support:
+
+.. code-block:: bash
+
+   pip install "codehealthanalyzer[web]"
+
 Quick Start
 -----------
 
@@ -43,14 +51,12 @@ Quick Start
 
 .. code-block:: bash
 
-   # Complete analysis of current project
    codehealthanalyzer analyze .
-
-   # Analysis with HTML output
-   codehealthanalyzer analyze . --format html --output reports/
-
-   # Quality score only
-   codehealthanalyzer score .
+   codehealthanalyzer analyze . --format all --output reports
+   codehealthanalyzer violations . --format csv
+   codehealthanalyzer templates . --config config.json
+   codehealthanalyzer errors . --no-json --format markdown
+   codehealthanalyzer dashboard .
 
 **Python API**
 
@@ -58,15 +64,62 @@ Quick Start
 
    from codehealthanalyzer import CodeAnalyzer
 
-   # Initialize analyzer
-   analyzer = CodeAnalyzer('/path/to/project')
+   analyzer = CodeAnalyzer(
+       ".",
+       config={"target_dir": ".", "templates_dir": ["templates"]},
+   )
+   report = analyzer.generate_full_report(output_dir="reports")
+   print(report["summary"]["quality_score"])
 
-   # Generate complete report
-   report = analyzer.generate_full_report(output_dir='reports/')
+Configuration
+-------------
 
-   # Get quality score
-   score = analyzer.get_quality_score()
-   print(f"Quality Score: {score}/100")
+Example ``config.json``:
+
+.. code-block:: json
+
+   {
+     "limits": {
+       "python_function": { "yellow": 30, "red": 50 },
+       "python_class": { "yellow": 300, "red": 500 },
+       "python_module": { "yellow": 500, "red": 1000 },
+       "html_template": { "yellow": 150, "red": 200 },
+       "test_file": { "yellow": 400, "red": 600 }
+     },
+     "target_dir": ".",
+     "templates_dir": ["templates", "app/templates"],
+     "exclude_dirs": ["legacy", "vendor"],
+     "ruff_fix": false,
+     "no_default_excludes": false
+   }
+
+Supported fields:
+
+* ``limits``: overrides size thresholds
+* ``target_dir``: directory analyzed by Ruff
+* ``templates_dir``: string or list of template directories
+* ``exclude_dirs``: string or list of extra directories to ignore
+* ``ruff_fix``: runs ``ruff check --fix`` before collection
+* ``no_default_excludes``: disables the default exclusions
+
+Report Contract
+---------------
+
+The consolidated report always contains:
+
+.. code-block:: python
+
+   {
+       "metadata": {...},
+       "summary": {...},
+       "violations": {...},
+       "templates": {...},
+       "errors": {...},
+       "priorities": [...],
+       "quality_score": 0,
+   }
+
+Typed schemas live in ``codehealthanalyzer/schemas.py``.
 
 Table of Contents
 -----------------
@@ -77,24 +130,6 @@ Table of Contents
 
    installation
    quickstart
-   api
-   cli
-   configuration
-   examples
-   contributing
-   changelog
-
-API Reference
--------------
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference:
-
-   api/codehealthanalyzer
-   api/analyzers
-   api/reports
-   api/utils
 
 Indices and Tables
 ------------------

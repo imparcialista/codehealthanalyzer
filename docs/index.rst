@@ -13,21 +13,23 @@ CodeHealthAnalyzer Documentation
    :target: https://github.com/psf/black
    :alt: Code Style
 
-CodeHealthAnalyzer é uma biblioteca Python moderna e abrangente para análise de qualidade de código. 
-Ela combina múltiplas ferramentas de análise em uma interface unificada, fornecendo insights detalhados 
-sobre a saúde do seu código.
+CodeHealthAnalyzer é uma biblioteca Python para análise de saúde de código
+com foco em três frentes:
+
+* violações de tamanho em módulos, classes, funções e templates
+* CSS e JavaScript inline em templates HTML
+* erros de linting coletados via Ruff
 
 Principais Funcionalidades
 --------------------------
 
-* **🚨 Análise de Violações**: Detecta funções, classes e módulos que excedem limites de tamanho
-* **🎨 Análise de Templates**: Identifica CSS/JS inline em templates HTML que podem ser extraídos
-* **⚠️ Integração com Ruff**: Analisa erros de linting e os categoriza por prioridade
-* **📊 Score de Qualidade**: Calcula um score de 0-100 baseado na saúde geral do código
-* **🎯 Priorização Inteligente**: Sugere ações baseadas na criticidade dos problemas
-* **📈 Relatórios Múltiplos**: Gera relatórios em JSON, HTML, Markdown e CSV
-* **🖥️ CLI Amigável**: Interface de linha de comando completa e intuitiva
-* **🔧 Altamente Configurável**: Personalize limites, regras e categorias
+* **API Python estável** com ``CodeAnalyzer`` e analyzers especializados
+* **CLI completa** com ``analyze``, ``violations``, ``templates``, ``errors``,
+  ``score``, ``info``, ``dashboard``, ``format`` e ``lint``
+* **Relatórios em JSON, HTML, Markdown e CSV**
+* **Dashboard FastAPI opcional** para métricas agregadas
+* **Contrato de relatório tipado** e versão centralizada
+* **Configuração por JSON** para limites, diretórios e exclusões
 
 Instalação
 ----------
@@ -35,6 +37,12 @@ Instalação
 .. code-block:: bash
 
    pip install codehealthanalyzer
+
+Com dashboard:
+
+.. code-block:: bash
+
+   pip install "codehealthanalyzer[web]"
 
 Uso Rápido
 ----------
@@ -46,11 +54,11 @@ Uso Rápido
    # Análise completa do projeto atual
    codehealthanalyzer analyze .
 
-   # Análise com saída em HTML
-   codehealthanalyzer analyze . --format html --output reports/
-
-   # Apenas score de qualidade
-   codehealthanalyzer score .
+   codehealthanalyzer analyze . --format all --output reports
+   codehealthanalyzer violations . --format csv
+   codehealthanalyzer templates . --config config.json
+   codehealthanalyzer errors . --no-json --format markdown
+   codehealthanalyzer dashboard .
 
 **API Python**
 
@@ -58,15 +66,62 @@ Uso Rápido
 
    from codehealthanalyzer import CodeAnalyzer
 
-   # Inicializa o analisador
-   analyzer = CodeAnalyzer('/path/to/project')
+   analyzer = CodeAnalyzer(
+       ".",
+       config={"target_dir": ".", "templates_dir": ["templates"]},
+   )
+   report = analyzer.generate_full_report(output_dir="reports")
+   print(report["summary"]["quality_score"])
 
-   # Gera relatório completo
-   report = analyzer.generate_full_report(output_dir='reports/')
+Configuração
+------------
 
-   # Obtém score de qualidade
-   score = analyzer.get_quality_score()
-   print(f"Score de Qualidade: {score}/100")
+Exemplo de ``config.json``:
+
+.. code-block:: json
+
+   {
+     "limits": {
+       "python_function": { "yellow": 30, "red": 50 },
+       "python_class": { "yellow": 300, "red": 500 },
+       "python_module": { "yellow": 500, "red": 1000 },
+       "html_template": { "yellow": 150, "red": 200 },
+       "test_file": { "yellow": 400, "red": 600 }
+     },
+     "target_dir": ".",
+     "templates_dir": ["templates", "app/templates"],
+     "exclude_dirs": ["legacy", "vendor"],
+     "ruff_fix": false,
+     "no_default_excludes": false
+   }
+
+Campos suportados:
+
+* ``limits``: sobrescreve limites de tamanho
+* ``target_dir``: diretório analisado pelo Ruff
+* ``templates_dir``: string ou lista de diretórios de templates
+* ``exclude_dirs``: string ou lista de diretórios extras a ignorar
+* ``ruff_fix``: roda ``ruff check --fix`` antes da coleta
+* ``no_default_excludes``: desabilita as exclusões padrão
+
+Contrato de Relatório
+---------------------
+
+O relatório consolidado sempre contém:
+
+.. code-block:: python
+
+   {
+       "metadata": {...},
+       "summary": {...},
+       "violations": {...},
+       "templates": {...},
+       "errors": {...},
+       "priorities": [...],
+       "quality_score": 0,
+   }
+
+Os schemas tipados ficam em ``codehealthanalyzer/schemas.py``.
 
 Índice
 ------
@@ -77,24 +132,11 @@ Uso Rápido
 
    installation
    quickstart
-   api
-   cli
-   configuration
-   examples
-   contributing
-   changelog
-
-Referência da API
------------------
 
 .. toctree::
-   :maxdepth: 2
-   :caption: API Reference:
+   :hidden:
 
-   api/codehealthanalyzer
-   api/analyzers
-   api/reports
-   api/utils
+   en/index
 
 Índices e Tabelas
 -----------------
