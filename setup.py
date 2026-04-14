@@ -5,7 +5,7 @@ Este script permite instalar a biblioteca CodeHealthAnalyzer usando pip.
 
 from pathlib import Path
 
-from setuptools import find_packages, setup
+from setuptools import find_namespace_packages, setup
 
 about = {}
 exec(
@@ -53,10 +53,18 @@ setup(
     author="Luarco Team",
     author_email="contato@luarco.com.br",
     description="Biblioteca Python para análise de qualidade e saúde de código",
+    license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/imparcialista/codehealthanalyzer",
-    packages=find_packages(include=["codehealthanalyzer", "codehealthanalyzer.*"]),
+    packages=find_namespace_packages(
+        include=["codehealthanalyzer", "codehealthanalyzer.*"],
+        exclude=[
+            "codehealthanalyzer.web.static",
+            "codehealthanalyzer.web.static.*",
+            "codehealthanalyzer.web.templates",
+        ],
+    ),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
@@ -100,6 +108,7 @@ setup(
             "websockets>=12.0,<14.0",
         ],
     },
+    license_files=[],
     entry_points={
         "console_scripts": [
             "codehealthanalyzer=codehealthanalyzer.cli.main:main",
@@ -116,10 +125,12 @@ setup(
             "web/templates/*.html",
             "web/static/css/*.css",
             "web/static/js/*.js",
-            "locale/**/*.po",
-            "locale/**/*.mo",
         ],
     },
+    data_files=[
+        ("share/codehealthanalyzer/locale/en/LC_MESSAGES", ["locale/en/LC_MESSAGES/codehealthanalyzer.po"]),
+        ("share/codehealthanalyzer/locale/pt_BR/LC_MESSAGES", ["locale/pt_BR/LC_MESSAGES/codehealthanalyzer.po"]),
+    ],
     keywords=[
         "code-quality",
         "static-analysis",
