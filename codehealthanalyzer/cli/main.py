@@ -264,10 +264,11 @@ def _build_standard_report(report: FullReport) -> dict[str, Any]:
     templates = report.get("templates", {})
     errors = report.get("errors", {})
 
-    violation_items = cast(list[dict[str, Any]], violations.get("violations", []) or [])
-    warning_items = cast(list[dict[str, Any]], violations.get("warnings", []) or [])
-    template_items = cast(list[dict[str, Any]], templates.get("templates", []) or [])
-    error_items = cast(list[dict[str, Any]], errors.get("errors", []) or [])
+    # Compatibilidade com Python 3.8: evitar generics PEP585 em runtime dentro de cast().
+    violation_items = cast(list, violations.get("violations", []) or [])
+    warning_items = cast(list, violations.get("warnings", []) or [])
+    template_items = cast(list, templates.get("templates", []) or [])
+    error_items = cast(list, errors.get("errors", []) or [])
 
     return {
         "metadata": report.get("metadata", {}),
