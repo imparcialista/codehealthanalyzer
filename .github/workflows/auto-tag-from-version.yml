@@ -10,10 +10,14 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   create-tag:
     runs-on: ubuntu-latest
+    outputs:
+      created_new_tag: ${{ steps.meta.outputs.created_new_tag }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,3 +52,57 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.version.outputs.tag }}" -m "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Expose tag creation status
+        id: meta
+        run: |
+          if [ "${{ steps.exists.outputs.exists }}" = "false" ]; then
+            echo "created_new_tag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "created_new_tag=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  release-build:
+    runs-on: ubuntu-latest
+    needs: create-tag
+    if: needs.create-tag.outputs.created_new_tag == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Build release distributions
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+          python -m build
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+
+  pypi-publish:
+    runs-on: ubuntu-latest
+    needs: release-build
+    if: always() && needs.release-build.result == 'success'
+    environment:
+      name: release
+    permissions:
+      id-token: write
+    steps:
+      - name: Retrieve release distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+
+      - name: Publish release distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
