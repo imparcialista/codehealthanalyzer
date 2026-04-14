@@ -123,12 +123,26 @@ For `analyze`, full JSON is optional:
 - `--detail standard` (default): same + `analysis_report.json`
 - `--detail full`: same + `full_report.json`
 
+Generated files by mode:
+
+- `summary`: `summary_report.json`, `violations_report.json`, `templates_report.json`, `errors_report.json`
+- `standard`: everything from `summary` + `analysis_report.json`
+- `full`: everything from `standard` + `full_report.json`
+
 Examples:
 
 ```bash
 cha analyze . --config cha_config.json --detail summary
 cha analyze . --detail full --format all --output reports
 ```
+
+## Troubleshooting
+
+`Error: Invalid value for '--config' ... Path 'cha_config.json' does not exist`
+- Create the file in the current directory or pass an absolute path with `--config`.
+
+`WARNING: Ignoring invalid distribution ~odehealthanalyzer`
+- This usually means stale package metadata in `site-packages`; remove `~odehealthanalyzer*` directories.
 
 ## Report contract
 

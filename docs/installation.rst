@@ -56,7 +56,7 @@ Para verificar se a instalação foi bem-sucedida:
 
 .. code-block:: bash
 
-   codehealthanalyzer --version
+   cha --version
    # ou
    python -c "import codehealthanalyzer; print(codehealthanalyzer.__version__)"
 

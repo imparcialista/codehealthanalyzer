@@ -123,12 +123,26 @@ No comando `analyze`, o JSON completo agora é opcional:
 - `--detail standard` (padrão): idem + `analysis_report.json`
 - `--detail full`: idem + `full_report.json`
 
+Arquivos gerados por modo:
+
+- `summary`: `summary_report.json`, `violations_report.json`, `templates_report.json`, `errors_report.json`
+- `standard`: todos do `summary` + `analysis_report.json`
+- `full`: todos do `standard` + `full_report.json`
+
 Exemplos:
 
 ```bash
 cha analyze . --config cha_config.json --detail summary
 cha analyze . --detail full --format all --output reports
 ```
+
+## Troubleshooting
+
+`Error: Invalid value for '--config' ... Path 'cha_config.json' does not exist`
+- Crie o arquivo no diretório atual, ou passe caminho absoluto em `--config`.
+
+`WARNING: Ignoring invalid distribution ~odehealthanalyzer`
+- É lixo de instalação antiga no `site-packages`; remova diretórios `~odehealthanalyzer*`.
 
 ## Contrato de relatório
 
