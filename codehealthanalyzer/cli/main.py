@@ -174,12 +174,18 @@ def _write_analyze_json_files(
 
     # Arquivos base amigaveis para consumo humano e integracoes simples.
     formatter.to_json(summary_report, str(output_path / "summary_report.json"))
-    formatter.to_json(report.get("violations", {}), str(output_path / "violations_report.json"))
-    formatter.to_json(report.get("templates", {}), str(output_path / "templates_report.json"))
+    formatter.to_json(
+        report.get("violations", {}), str(output_path / "violations_report.json")
+    )
+    formatter.to_json(
+        report.get("templates", {}), str(output_path / "templates_report.json")
+    )
     formatter.to_json(report.get("errors", {}), str(output_path / "errors_report.json"))
 
     if detail in ["standard", "full"]:
-        formatter.to_json(_build_standard_report(report), str(output_path / "analysis_report.json"))
+        formatter.to_json(
+            _build_standard_report(report), str(output_path / "analysis_report.json")
+        )
 
     # Relatorio completo agora e opcional e so e gerado explicitamente.
     if detail == "full":
