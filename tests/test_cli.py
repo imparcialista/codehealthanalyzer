@@ -60,7 +60,12 @@ def test_analyze_runs_on_valid_project(runner, project, tmp_path):
             ["analyze", str(project), "--output", str(out), "--no-default-excludes"],
         )
     assert result.exit_code == 0
-    assert (out / "full_report.json").exists()
+    assert (out / "summary_report.json").exists()
+    assert (out / "analysis_report.json").exists()
+    assert (out / "violations_report.json").exists()
+    assert (out / "templates_report.json").exists()
+    assert (out / "errors_report.json").exists()
+    assert not (out / "full_report.json").exists()
 
 
 def test_analyze_json_report_has_summary(runner, project, tmp_path):
@@ -70,7 +75,7 @@ def test_analyze_json_report_has_summary(runner, project, tmp_path):
             cli,
             ["analyze", str(project), "--output", str(out), "--no-default-excludes"],
         )
-    report = json.loads((out / "full_report.json").read_text(encoding="utf-8"))
+    report = json.loads((out / "summary_report.json").read_text(encoding="utf-8"))
     assert "summary" in report
     assert "quality_score" in report["summary"]
 
@@ -100,7 +105,7 @@ def test_analyze_markdown_format(runner, project, tmp_path):
                 "--no-default-excludes",
             ],
         )
-    assert (out / "full_report.md").exists()
+    assert (out / "analysis_report.md").exists()
 
 
 def test_analyze_no_json_flag(runner, project, tmp_path):
@@ -117,7 +122,62 @@ def test_analyze_no_json_flag(runner, project, tmp_path):
                 "--no-default-excludes",
             ],
         )
+    assert not (out / "summary_report.json").exists()
+    assert not (out / "analysis_report.json").exists()
+    assert not (out / "violations_report.json").exists()
+    assert not (out / "templates_report.json").exists()
+    assert not (out / "errors_report.json").exists()
+
+
+def test_analyze_detail_summary_generates_summary_files(runner, project, tmp_path):
+    out = tmp_path / "out"
+    with patch("shutil.which", return_value=None):
+        runner.invoke(
+            cli,
+            [
+                "analyze",
+                str(project),
+                "--output",
+                str(out),
+                "--detail",
+                "summary",
+                "--no-default-excludes",
+            ],
+        )
+
+    assert (out / "summary_report.json").exists()
+    assert (out / "violations_report.json").exists()
+    assert (out / "templates_report.json").exists()
+    assert (out / "errors_report.json").exists()
+    assert not (out / "analysis_report.json").exists()
     assert not (out / "full_report.json").exists()
+    data = json.loads((out / "summary_report.json").read_text(encoding="utf-8"))
+    assert "summary" in data
+    assert "top_violations" in data
+
+
+def test_analyze_detail_full_generates_full_alias_file(runner, project, tmp_path):
+    out = tmp_path / "out"
+    with patch("shutil.which", return_value=None):
+        runner.invoke(
+            cli,
+            [
+                "analyze",
+                str(project),
+                "--output",
+                str(out),
+                "--detail",
+                "full",
+                "--no-default-excludes",
+            ],
+        )
+
+    assert (out / "summary_report.json").exists()
+    assert (out / "analysis_report.json").exists()
+    assert (out / "violations_report.json").exists()
+    assert (out / "templates_report.json").exists()
+    assert (out / "errors_report.json").exists()
+    assert (out / "full_report.json").exists()
 
 
 # ---------------------------------------------------------------------------

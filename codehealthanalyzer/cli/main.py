@@ -129,11 +129,31 @@ def _write_report_files(
     base_name: str,
     format_name: str,
     no_json: bool,
+    detail: str = "full",
 ) -> None:
     formatter = ReportFormatter()
     output_path.mkdir(parents=True, exist_ok=True)
+
     if not no_json:
-        formatter.to_json(report, str(output_path / f"{base_name}.json"))
+        summary_report = _build_summary_report(report)
+        if detail == "summary":
+            formatter.to_json(summary_report, str(output_path / f"{base_name}.json"))
+            formatter.to_json(
+                summary_report, str(output_path / f"{base_name}.summary.json")
+            )
+        elif detail == "standard":
+            formatter.to_json(
+                _build_standard_report(report), str(output_path / f"{base_name}.json")
+            )
+            formatter.to_json(
+                summary_report, str(output_path / f"{base_name}.summary.json")
+            )
+        else:
+            formatter.to_json(report, str(output_path / f"{base_name}.json"))
+            formatter.to_json(report, str(output_path / f"{base_name}.full.json"))
+            formatter.to_json(
+                summary_report, str(output_path / f"{base_name}.summary.json")
+            )
     if format_name in ["html", "all"]:
         ReportGenerator().generate_html_report(
             report, str(output_path / f"{base_name}.html")
@@ -142,6 +162,136 @@ def _write_report_files(
         formatter.to_markdown(report, str(output_path / f"{base_name}.md"))
     if format_name in ["csv", "all"]:
         formatter.to_csv(report, str(output_path / f"{base_name}.csv"))
+
+
+def _write_analyze_json_files(
+    report: FullReport,
+    output_path: Path,
+    detail: str,
+) -> None:
+    formatter = ReportFormatter()
+    summary_report = _build_summary_report(report)
+
+    # Arquivos base amigaveis para consumo humano e integracoes simples.
+    formatter.to_json(summary_report, str(output_path / "summary_report.json"))
+    formatter.to_json(
+        report.get("violations", {}), str(output_path / "violations_report.json")
+    )
+    formatter.to_json(
+        report.get("templates", {}), str(output_path / "templates_report.json")
+    )
+    formatter.to_json(report.get("errors", {}), str(output_path / "errors_report.json"))
+
+    if detail in ["standard", "full"]:
+        formatter.to_json(
+            _build_standard_report(report), str(output_path / "analysis_report.json")
+        )
+
+    # Relatorio completo agora e opcional e so e gerado explicitamente.
+    if detail == "full":
+        formatter.to_json(report, str(output_path / "full_report.json"))
+
+
+def _build_summary_report(report: FullReport, top_n: int = 10) -> dict[str, Any]:
+    violations = report.get("violations", {})
+    templates = report.get("templates", {})
+    errors = report.get("errors", {})
+    return {
+        "metadata": report.get("metadata", {}),
+        "summary": report.get("summary", {}),
+        "priorities": report.get("priorities", []),
+        "top_violations": (violations.get("violations", []) or [])[:top_n],
+        "top_warnings": (violations.get("warnings", []) or [])[:top_n],
+        "top_templates": (templates.get("templates", []) or [])[:top_n],
+        "top_errors": (errors.get("errors", []) or [])[:top_n],
+    }
+
+
+def _standardize_violation_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for item in items:
+        messages = item.get("violations", []) or []
+        out.append(
+            {
+                "file": item.get("file", ""),
+                "type": item.get("type", ""),
+                "lines": item.get("lines", 0),
+                "priority": item.get("priority", "low"),
+                "violation_count": len(messages),
+                "sample_violations": messages[:5],
+            }
+        )
+    return out
+
+
+def _standardize_templates(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for item in items:
+        out.append(
+            {
+                "file": item.get("file", ""),
+                "priority": item.get("priority", "low"),
+                "category": item.get("category", ""),
+                "total_css_chars": item.get("total_css_chars", item.get("css", 0)),
+                "total_js_chars": item.get("total_js_chars", item.get("js", 0)),
+                "css_inline_count": len(item.get("css_inline", []) or []),
+                "css_style_tags_count": len(item.get("css_style_tags", []) or []),
+                "js_inline_count": len(item.get("js_inline", []) or []),
+                "js_script_tags_count": len(item.get("js_script_tags", []) or []),
+            }
+        )
+    return out
+
+
+def _standardize_errors(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for item in items:
+        details = item.get("errors", []) or []
+        out.append(
+            {
+                "file": item.get("file", ""),
+                "priority": item.get("priority", "low"),
+                "category": item.get("category", ""),
+                "error_count": item.get("error_count", len(details)),
+                "sample_errors": details[:5],
+            }
+        )
+    return out
+
+
+def _build_standard_report(report: FullReport) -> dict[str, Any]:
+    violations = report.get("violations", {})
+    templates = report.get("templates", {})
+    errors = report.get("errors", {})
+
+    # Compatibilidade com Python 3.8: evitar generics PEP585 em runtime dentro de cast().
+    violation_items = cast(list, violations.get("violations", []) or [])
+    warning_items = cast(list, violations.get("warnings", []) or [])
+    template_items = cast(list, templates.get("templates", []) or [])
+    error_items = cast(list, errors.get("errors", []) or [])
+
+    return {
+        "metadata": report.get("metadata", {}),
+        "summary": report.get("summary", {}),
+        "quality_score": report.get("quality_score", 0),
+        "priorities": report.get("priorities", []),
+        "violations": {
+            "metadata": violations.get("metadata", {}),
+            "statistics": violations.get("statistics", {}),
+            "violations": _standardize_violation_items(violation_items),
+            "warnings": _standardize_violation_items(warning_items),
+        },
+        "templates": {
+            "metadata": templates.get("metadata", {}),
+            "statistics": templates.get("statistics", {}),
+            "templates": _standardize_templates(template_items),
+        },
+        "errors": {
+            "metadata": errors.get("metadata", {}),
+            "statistics": errors.get("statistics", {}),
+            "errors": _standardize_errors(error_items),
+        },
+    }
 
 
 @click.group()
@@ -178,6 +328,13 @@ def cli():
 )
 @click.option("--no-json", is_flag=True, help="Não gerar o relatório JSON padrão")
 @click.option(
+    "--detail",
+    type=click.Choice(["summary", "standard", "full"]),
+    default="standard",
+    show_default=True,
+    help="Nível de detalhe (full_report.json é gerado apenas em 'full')",
+)
+@click.option(
     "--config", "-c", type=click.Path(exists=True), help="Arquivo de configuração JSON"
 )
 @click.option(
@@ -191,6 +348,7 @@ def analyze(
     output: Optional[str],
     format: str,
     no_json: bool,
+    detail: str,
     config: Optional[str],
     no_default_excludes: bool,
     verbose: bool,
@@ -274,7 +432,12 @@ def analyze(
 
         # Diretório de saída padrão
         output_path = Path(output or "reports")
-        _write_report_files(report, output_path, "full_report", format, no_json)
+        output_path.mkdir(parents=True, exist_ok=True)
+        if not no_json:
+            _write_analyze_json_files(report, output_path, detail)
+        _write_report_files(
+            report, output_path, "analysis_report", format, no_json=True, detail=detail
+        )
 
         click.echo("\n" + ColorHelper.success("Análise concluída com sucesso!"))
 
