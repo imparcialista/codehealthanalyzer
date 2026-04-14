@@ -121,7 +121,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
         doc_lines = self._python_docstring_lines(tree)
         count = 0
         try:
-            with open(file_path, "r", encoding="utf-8") as fh:
+            with open(file_path, "r", encoding="utf-8-sig") as fh:
                 for idx, raw in enumerate(fh, 1):
                     stripped = raw.strip()
                     if not stripped or stripped.startswith("#"):
@@ -150,7 +150,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
 
     def _count_html_lines(self, file_path: Path) -> int:
         try:
-            with open(file_path, "r", encoding="utf-8") as fh:
+            with open(file_path, "r", encoding="utf-8-sig") as fh:
                 return sum(1 for line in fh if line.strip())
         except OSError as exc:
             logger.warning("Falha ao ler template %s: %s", file_path, exc)
@@ -192,7 +192,7 @@ class ViolationsAnalyzer(BaseAnalyzer):
         if file_path.suffix == ".py":
             result["type"] = "Python"
             try:
-                with open(file_path, "r", encoding="utf-8") as fh:
+                with open(file_path, "r", encoding="utf-8-sig") as fh:
                     source = fh.read()
                 tree = ast.parse(source, filename=str(file_path))
             except (OSError, SyntaxError) as exc:

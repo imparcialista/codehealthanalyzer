@@ -71,6 +71,18 @@ def test_check_file_python_syntax_error(tmp_path):
     assert len(result["violations"]) > 0
 
 
+def test_check_file_python_with_utf8_bom(tmp_path):
+    f = tmp_path / "bom_module.py"
+    f.write_text("x = 1\n", encoding="utf-8-sig")
+
+    result = _make(tmp_path, {"no_default_excludes": True}).check_file(f)
+
+    assert result["violations"] == []
+    assert result["priority"] == "low"
+    assert result["type"] == "Python"
+    assert result["lines"] == 1
+
+
 # ---------------------------------------------------------------------------
 # check_file — HTML
 # ---------------------------------------------------------------------------
