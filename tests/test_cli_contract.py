@@ -35,7 +35,7 @@ def test_cli_analyze_generates_json_report(tmp_path):
     )
 
     assert proc.returncode == 0
-    report_file = output_dir / "full_report.json"
+    report_file = output_dir / "summary_report.json"
     assert report_file.exists()
     report = json.loads(report_file.read_text(encoding="utf-8"))
     assert "summary" in report

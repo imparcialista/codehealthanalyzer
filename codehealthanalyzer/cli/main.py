@@ -164,6 +164,28 @@ def _write_report_files(
         formatter.to_csv(report, str(output_path / f"{base_name}.csv"))
 
 
+def _write_analyze_json_files(
+    report: FullReport,
+    output_path: Path,
+    detail: str,
+) -> None:
+    formatter = ReportFormatter()
+    summary_report = _build_summary_report(report)
+
+    # Arquivos base amigaveis para consumo humano e integracoes simples.
+    formatter.to_json(summary_report, str(output_path / "summary_report.json"))
+    formatter.to_json(report.get("violations", {}), str(output_path / "violations_report.json"))
+    formatter.to_json(report.get("templates", {}), str(output_path / "templates_report.json"))
+    formatter.to_json(report.get("errors", {}), str(output_path / "errors_report.json"))
+
+    if detail in ["standard", "full"]:
+        formatter.to_json(_build_standard_report(report), str(output_path / "analysis_report.json"))
+
+    # Relatorio completo agora e opcional e so e gerado explicitamente.
+    if detail == "full":
+        formatter.to_json(report, str(output_path / "full_report.json"))
+
+
 def _build_summary_report(report: FullReport, top_n: int = 10) -> dict[str, Any]:
     violations = report.get("violations", {})
     templates = report.get("templates", {})
@@ -303,7 +325,7 @@ def cli():
     type=click.Choice(["summary", "standard", "full"]),
     default="standard",
     show_default=True,
-    help="Nível de detalhe do JSON gerado",
+    help="Nível de detalhe (full_report.json é gerado apenas em 'full')",
 )
 @click.option(
     "--config", "-c", type=click.Path(exists=True), help="Arquivo de configuração JSON"
@@ -403,13 +425,11 @@ def analyze(
 
         # Diretório de saída padrão
         output_path = Path(output or "reports")
+        output_path.mkdir(parents=True, exist_ok=True)
+        if not no_json:
+            _write_analyze_json_files(report, output_path, detail)
         _write_report_files(
-            report,
-            output_path,
-            "full_report",
-            format,
-            no_json,
-            detail=detail,
+            report, output_path, "analysis_report", format, no_json=True, detail=detail
         )
 
         click.echo("\n" + ColorHelper.success("Análise concluída com sucesso!"))
