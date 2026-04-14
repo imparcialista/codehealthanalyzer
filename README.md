@@ -36,13 +36,15 @@ pip install -e ".[dev,web]"
 
 ### CLI
 
+Use `cha` como comando recomendado (alias curto de `codehealthanalyzer`).
+
 ```bash
-codehealthanalyzer analyze .
-codehealthanalyzer analyze . --format all --output reports
-codehealthanalyzer violations . --format csv
-codehealthanalyzer templates . --config config.json
-codehealthanalyzer errors . --no-json --format markdown
-codehealthanalyzer dashboard .
+cha analyze .
+cha analyze . --format all --output reports
+cha violations . --format csv
+cha templates . --config cha_config.json
+cha errors . --no-json --format markdown
+cha dashboard .
 ```
 
 ### API Python
@@ -57,7 +59,7 @@ print(report["summary"]["quality_score"])
 
 ## Configuração
 
-Exemplo de `config.json`:
+Exemplo de `cha_config.json`:
 
 ```json
 {
@@ -76,14 +78,57 @@ Exemplo de `config.json`:
 }
 ```
 
-Campos suportados:
+### Ordem de precedência
 
-- `limits`: sobrescreve limites de tamanho
-- `target_dir`: diretório analisado pelo Ruff
-- `templates_dir`: string ou lista de diretórios de templates
-- `exclude_dirs`: string ou lista de diretórios extras a ignorar
-- `ruff_fix`: roda `ruff check --fix` antes da coleta
-- `no_default_excludes`: desabilita as exclusões padrão
+- Flags da CLI (maior prioridade)
+- Arquivo `--config`
+- Defaults da biblioteca
+
+### Campos suportados
+
+| Campo | Tipo | Padrão | O que controla |
+|---|---|---|---|
+| `limits` | objeto | limites internos | Limites de tamanho por tipo de arquivo/estrutura |
+| `target_dir` | string | `"."` | Diretório alvo para análise de código (incluindo Ruff) |
+| `templates_dir` | string ou lista | autodetecção | Diretórios HTML/Jinja a varrer |
+| `exclude_dirs` | string ou lista | `[]` | Exclusões adicionais além das exclusões padrão |
+| `ruff_fix` | boolean | `false` | Executa `ruff check --fix` antes da coleta de erros |
+| `no_default_excludes` | boolean | `false` | Remove exclusões padrão (`tests`, `venv`, `dist`, etc.) |
+
+### Configurações rápidas por cenário
+
+Projeto Flask/Django com templates em múltiplas pastas:
+
+```json
+{
+  "templates_dir": ["templates", "app/templates", "src/templates"],
+  "exclude_dirs": ["migrations", "node_modules"]
+}
+```
+
+Monorepo (analisar apenas um subprojeto):
+
+```json
+{
+  "target_dir": "services/billing",
+  "templates_dir": ["services/billing/templates"]
+}
+```
+
+### Controle de detalhamento dos relatórios
+
+No comando `analyze`, o JSON completo agora é opcional:
+
+- `--detail summary`: gera resumo + arquivos por domínio (`violations/templates/errors`)
+- `--detail standard` (padrão): idem + `analysis_report.json`
+- `--detail full`: idem + `full_report.json`
+
+Exemplos:
+
+```bash
+cha analyze . --config cha_config.json --detail summary
+cha analyze . --detail full --format all --output reports
+```
 
 ## Contrato de relatório
 
