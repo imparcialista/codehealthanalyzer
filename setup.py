@@ -15,28 +15,13 @@ exec(
     about,
 )
 
-# Lê o README para a descrição longa (português + inglês)
+# Lê o README principal para a descrição longa publicada no PyPI
 this_directory = Path(__file__).parent
-readme_pt = (
+long_description = (
     (this_directory / "README.md").read_text(encoding="utf-8")
     if (this_directory / "README.md").exists()
     else ""
 )
-readme_en = (
-    (this_directory / "README_EN.md").read_text(encoding="utf-8")
-    if (this_directory / "README_EN.md").exists()
-    else ""
-)
-
-# Combina ambas as versões
-if readme_pt and readme_en:
-    long_description = readme_pt + "\n\n---\n\n" + readme_en
-elif readme_pt:
-    long_description = readme_pt
-elif readme_en:
-    long_description = readme_en
-else:
-    long_description = ""
 
 # Lê os requirements
 requirements = []
