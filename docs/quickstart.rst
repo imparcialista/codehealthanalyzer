@@ -12,7 +12,7 @@ Após a instalação, rode uma análise simples no diretório atual:
 .. code-block:: bash
 
    cd /caminho/para/seu/projeto
-   codehealthanalyzer analyze .
+   cha analyze .
 
 Comandos Básicos da CLI
 -----------------------
@@ -21,38 +21,38 @@ Comandos Básicos da CLI
 
 .. code-block:: bash
 
-   codehealthanalyzer analyze . --format all --output reports
+   cha analyze . --format all --output reports
 
 **Score de qualidade**
 
 .. code-block:: bash
 
-   codehealthanalyzer score .
+   cha score .
 
 **Informações do projeto**
 
 .. code-block:: bash
 
-   codehealthanalyzer info .
+   cha info .
 
 **Análises específicas**
 
 .. code-block:: bash
 
    # Apenas violações de tamanho
-   codehealthanalyzer violations . --format csv
+   cha violations . --format csv
 
    # Apenas templates HTML
-   codehealthanalyzer templates . --config config.json
+   cha templates . --config cha_config.json
 
    # Apenas erros de linting
-   codehealthanalyzer errors . --no-json --format markdown
+   cha errors . --no-json --format markdown
 
 **Dashboard**
 
 .. code-block:: bash
 
-   codehealthanalyzer dashboard .
+   cha dashboard .
 
 Uso da API Python
 -----------------
@@ -130,3 +130,10 @@ Próximos Passos
 2. Integre os comandos da CLI ao CI do projeto.
 3. Use os formatos HTML, Markdown e CSV conforme o público do relatório.
 4. Acople a API Python em scripts internos ou pipelines.
+
+Erros comuns
+------------
+
+``Error: Invalid value for '--config' ... Path 'cha_config.json' does not exist``
+
+* Crie o arquivo no diretório atual ou use caminho absoluto em ``--config``.

@@ -51,12 +51,12 @@ Quick Start
 
 .. code-block:: bash
 
-   codehealthanalyzer analyze .
-   codehealthanalyzer analyze . --format all --output reports
-   codehealthanalyzer violations . --format csv
-   codehealthanalyzer templates . --config config.json
-   codehealthanalyzer errors . --no-json --format markdown
-   codehealthanalyzer dashboard .
+   cha analyze .
+   cha analyze . --format all --output reports
+   cha violations . --format csv
+   cha templates . --config cha_config.json
+   cha errors . --no-json --format markdown
+   cha dashboard .
 
 **Python API**
 
@@ -74,7 +74,7 @@ Quick Start
 Configuration
 -------------
 
-Example ``config.json``:
+Example ``cha_config.json``:
 
 .. code-block:: json
 
@@ -101,6 +101,12 @@ Supported fields:
 * ``exclude_dirs``: string or list of extra directories to ignore
 * ``ruff_fix``: runs ``ruff check --fix`` before collection
 * ``no_default_excludes``: disables the default exclusions
+
+Report detail modes for ``analyze``:
+
+* ``--detail summary``: generates ``summary_report.json`` + domain files
+* ``--detail standard``: adds ``analysis_report.json``
+* ``--detail full``: adds ``full_report.json``
 
 Report Contract
 ---------------

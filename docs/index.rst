@@ -52,13 +52,13 @@ Uso Rápido
 .. code-block:: bash
 
    # Análise completa do projeto atual
-   codehealthanalyzer analyze .
+   cha analyze .
 
-   codehealthanalyzer analyze . --format all --output reports
-   codehealthanalyzer violations . --format csv
-   codehealthanalyzer templates . --config config.json
-   codehealthanalyzer errors . --no-json --format markdown
-   codehealthanalyzer dashboard .
+   cha analyze . --format all --output reports
+   cha violations . --format csv
+   cha templates . --config cha_config.json
+   cha errors . --no-json --format markdown
+   cha dashboard .
 
 **API Python**
 
@@ -76,7 +76,7 @@ Uso Rápido
 Configuração
 ------------
 
-Exemplo de ``config.json``:
+Exemplo de ``cha_config.json``:
 
 .. code-block:: json
 
@@ -103,6 +103,12 @@ Campos suportados:
 * ``exclude_dirs``: string ou lista de diretórios extras a ignorar
 * ``ruff_fix``: roda ``ruff check --fix`` antes da coleta
 * ``no_default_excludes``: desabilita as exclusões padrão
+
+Detalhamento de relatório no comando ``analyze``:
+
+* ``--detail summary``: gera ``summary_report.json`` + arquivos por domínio
+* ``--detail standard``: adiciona ``analysis_report.json``
+* ``--detail full``: adiciona ``full_report.json``
 
 Contrato de Relatório
 ---------------------
